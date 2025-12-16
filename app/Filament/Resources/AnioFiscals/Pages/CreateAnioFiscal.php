@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\App\Resources\AnioFiscals\Pages;
+namespace App\Filament\Resources\AnioFiscals\Pages;
 
-use App\Filament\App\Resources\AnioFiscals\AnioFiscalResource;
+use App\Filament\Resources\AnioFiscals\AnioFiscalResource;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateAnioFiscal extends CreateRecord

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Resources\AnioFiscals\Schemas;
+namespace App\Filament\Resources\AnioFiscals\Schemas;
 
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;

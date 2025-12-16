@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Filament\App\Resources\AnioFiscals;
+namespace App\Filament\Resources\AnioFiscals;
 
-use App\Filament\App\Resources\AnioFiscals\Pages\CreateAnioFiscal;
-use App\Filament\App\Resources\AnioFiscals\Pages\EditAnioFiscal;
-use App\Filament\App\Resources\AnioFiscals\Pages\ListAnioFiscals;
-use App\Filament\App\Resources\AnioFiscals\Schemas\AnioFiscalForm;
-use App\Filament\App\Resources\AnioFiscals\Tables\AnioFiscalsTable;
+use App\Filament\Resources\AnioFiscals\Pages\CreateAnioFiscal;
+use App\Filament\Resources\AnioFiscals\Pages\EditAnioFiscal;
+use App\Filament\Resources\AnioFiscals\Pages\ListAnioFiscals;
+use App\Filament\Resources\AnioFiscals\Schemas\AnioFiscalForm;
+use App\Filament\Resources\AnioFiscals\Tables\AnioFiscalsTable;
 use App\Models\AnioFiscal;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -21,6 +22,8 @@ class AnioFiscalResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'anio';
+    protected static ?string $navigationLabel = 'Años fiscales';
+    protected static string|UnitEnum|null $navigationGroup = 'Parámetros globales';
 
     public static function form(Schema $schema): Schema
     {

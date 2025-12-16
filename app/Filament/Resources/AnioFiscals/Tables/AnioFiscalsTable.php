@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Resources\AnioFiscals\Tables;
+namespace App\Filament\Resources\AnioFiscals\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
