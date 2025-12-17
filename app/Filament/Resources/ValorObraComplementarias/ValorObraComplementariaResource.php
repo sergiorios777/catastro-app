@@ -9,6 +9,7 @@ use App\Filament\Resources\ValorObraComplementarias\Schemas\ValorObraComplementa
 use App\Filament\Resources\ValorObraComplementarias\Tables\ValorObraComplementariasTable;
 use App\Models\ValorObraComplementaria;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -21,6 +22,8 @@ class ValorObraComplementariaResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'Valor obra';
+    protected static ?string $navigationLabel = 'Valores unitarios de obras complementarias';
+    protected static string|UnitEnum|null $navigationGroup = 'Parámetros globales';
 
     public static function form(Schema $schema): Schema
     {

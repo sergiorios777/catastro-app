@@ -9,6 +9,7 @@ use App\Filament\Resources\ValorUnitarioEdificacions\Schemas\ValorUnitarioEdific
 use App\Filament\Resources\ValorUnitarioEdificacions\Tables\ValorUnitarioEdificacionsTable;
 use App\Models\ValorUnitarioEdificacion;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -21,6 +22,8 @@ class ValorUnitarioEdificacionResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'Valor unitario';
+    protected static ?string $navigationLabel = 'Valores unitarios de edificaciones';
+    protected static string|UnitEnum|null $navigationGroup = 'Parámetros globales';
 
     public static function form(Schema $schema): Schema
     {

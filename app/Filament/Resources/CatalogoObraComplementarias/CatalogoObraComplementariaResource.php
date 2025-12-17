@@ -9,6 +9,7 @@ use App\Filament\Resources\CatalogoObraComplementarias\Schemas\CatalogoObraCompl
 use App\Filament\Resources\CatalogoObraComplementarias\Tables\CatalogoObraComplementariasTable;
 use App\Models\CatalogoObraComplementaria;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -21,6 +22,8 @@ class CatalogoObraComplementariaResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'Catalogo obra';
+    protected static ?string $navigationLabel = 'Catalogo de obras complementarias';
+    protected static string|UnitEnum|null $navigationGroup = 'Parámetros globales';
 
     public static function form(Schema $schema): Schema
     {
