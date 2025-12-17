@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
+
 
 class PredioFisico extends Model
 {
@@ -90,6 +92,11 @@ class PredioFisico extends Model
             ->withPivot(['porcentaje_propiedad', 'tipo_propiedad', 'fecha_inicio', 'vigente', 'documento_sustento'])
             ->withTimestamps();
         // NOTA: Aquí NO ponemos 'wherePivot('vigente', true)'. Queremos ver todo.
+    }
+
+    public function construcciones()
+    {
+        return $this->hasMany(Construccion::class);
     }
 
     /**
