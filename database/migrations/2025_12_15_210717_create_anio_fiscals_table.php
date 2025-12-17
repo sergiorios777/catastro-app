@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('anio_fiscals', function (Blueprint $table) {
             $table->id();
             // Importante: Multi-tenancy
-            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+            // $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
 
             // Datos del Año
             $table->integer('anio'); // Ej: 2025
@@ -30,7 +30,7 @@ return new class extends Migration {
             $table->timestamps();
 
             // Evitar duplicar el año 2025 para el mismo municipio
-            $table->unique(['tenant_id', 'anio']);
+            $table->unique(['anio']);
         });
     }
 

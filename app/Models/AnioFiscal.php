@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
-use App\Models\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class AnioFiscal extends Model
 {
-    use BelongsToTenant;
     protected $fillable = [
         'anio',
         'valor_uit',

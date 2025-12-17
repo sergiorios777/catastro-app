@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('valor_unitario_edificacions', function (Blueprint $table) {
             $table->id();
             // 1. Pertenencia
-            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+            // $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('anio_fiscal_id')->constrained()->cascadeOnDelete();
 
             // 2. Clasificación
@@ -41,7 +41,7 @@ return new class extends Migration {
             // 4. Candado de unicidad
             // No puede haber dos precios para "Muros A en Selva para el 2025"
             $table->unique(
-                ['tenant_id', 'anio_fiscal_id', 'zona_geografica', 'componente', 'categoria'],
+                ['anio_fiscal_id', 'zona_geografica', 'componente', 'categoria'],
                 'unique_valor_unitario' // Nombre corto para el índice
             );
         });
