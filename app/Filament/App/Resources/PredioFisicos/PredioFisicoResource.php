@@ -40,6 +40,7 @@ class PredioFisicoResource extends Resource
         return [
             RelationManagers\PropietariosRelationManager::class,
             RelationManagers\ConstruccionesRelationManager::class,
+            RelationManagers\ObrasComplementariasRelationManager::class,
         ];
     }
 

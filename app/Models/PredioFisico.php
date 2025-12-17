@@ -99,6 +99,18 @@ class PredioFisico extends Model
         return $this->hasMany(Construccion::class);
     }
 
+    public function obrasComplementarias()
+    {
+        return $this->belongsToMany(
+            CatalogoObraComplementaria::class,
+            'predio_obras_complementarias', // Nombre de la tabla pivote
+            'predio_fisico_id',             // Clave foránea del modelo actual
+            'catalogo_obra_complementaria_id' // Clave foránea del otro modelo
+        )
+            ->withPivot(['cantidad', 'anio_construccion', 'estado_conservacion']) // Campos extra a recuperar
+            ->withTimestamps();
+    }
+
     /**
      * Scope para filtrar solo predios activos (útil para listados generales)
      */
