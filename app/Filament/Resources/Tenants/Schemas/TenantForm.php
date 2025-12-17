@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Tenants\Schemas;
 
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
@@ -50,6 +51,23 @@ class TenantForm
                             ->default(true)
                             ->onColor('success')
                             ->offColor('danger'),
+                    ]),
+                Section::make('Ubicación Geográfica')
+                    ->description('Configure el Ubigeo para la carga automática de aranceles.')
+                    ->schema([
+                        TextInput::make('ubigeo')
+                            ->label('Código Ubigeo')
+                            ->length(6)
+                            ->numeric()
+                            ->placeholder('Ej: 160506')
+                            ->required(), // Debería ser obligatorio para que funcione el cálculo
+
+                        Grid::make(3)
+                            ->schema([
+                                TextInput::make('departamento')->placeholder('LORETO'),
+                                TextInput::make('provincia')->placeholder('PUTUMAYO'),
+                                TextInput::make('distrito')->placeholder('ROSA PANDURO'),
+                            ]),
                     ]),
             ]);
     }
