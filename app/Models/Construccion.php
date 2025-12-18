@@ -22,6 +22,9 @@ class Construccion extends Model
         'anio_construccion',
         'estado_conservacion',
         'material_estructural',
+        'uso_especifico',
+        'porcentaje_depreciacion_calculado',
+        'porcentaje_depreciacion_manual',
     ];
 
     public function predioFisico(): BelongsTo

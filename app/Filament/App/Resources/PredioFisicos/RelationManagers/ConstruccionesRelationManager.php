@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources\PredioFisicos\RelationManagers;
 
+use App\Models\Depreciacion;
 use Filament\Actions\AssociateAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -19,6 +20,8 @@ use Filament\Forms\Components\Select;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 
 class ConstruccionesRelationManager extends RelationManager
 {
@@ -49,13 +52,32 @@ class ConstruccionesRelationManager extends RelationManager
                                     ->required(),
                             ]),
 
-                        Grid::make(3)
+                        Grid::make(2)
                             ->schema([
                                 TextInput::make('anio_construccion')
                                     ->label('Año Construcción')
+                                    ->live()
                                     ->numeric()
                                     ->minValue(1900)
                                     ->maxValue(now()->year)
+                                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                                        // Recalcular antigüedad si cambia el año
+                                        $antiguedad = now()->year - (int) $state;
+                                        $set('temp_antiguedad_calculada', $antiguedad);
+                                        // Podrías disparar el cálculo de depreciación aquí también
+                                    })
+                                    ->required(),
+
+                                Select::make('uso_especifico')
+                                    ->label('Uso / Clasificación RNT')
+                                    ->options([
+                                        'casa_habitacion' => 'Vivienda / Depto',
+                                        'tienda_deposito' => 'Tiendas / Depósitos',
+                                        'edificio_oficina' => 'Oficinas / Edificios',
+                                        'industria_salud' => 'Industria / Salud / Cine',
+                                        'otros' => 'Otro (Adobe/Madera)',
+                                    ])
+                                    ->live()
                                     ->required(),
 
                                 Select::make('material_estructural')
@@ -67,6 +89,7 @@ class ConstruccionesRelationManager extends RelationManager
                                         'madera' => 'Madera',
                                         'drywall' => 'Drywall / Prefab.',
                                     ])
+                                    ->live()
                                     ->required(),
 
                                 Select::make('estado_conservacion')
@@ -77,15 +100,56 @@ class ConstruccionesRelationManager extends RelationManager
                                         'regular' => 'Regular',
                                         'malo' => 'Malo',
                                     ])
+                                    ->live()
                                     ->default('regular')
+                                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                                        // 1. Recopilar datos
+                                        $material = $get('material_estructural');
+                                        $uso = $get('uso_especifico');
+                                        $anio = (int) $get('anio_construccion');
+
+                                        // Validación básica para no calcular con datos vacíos
+                                        if (!$material || !$uso || !$anio)
+                                            return;
+
+                                        $antiguedad = now()->year - $anio;
+
+                                        // 2. Buscar en la Matriz RNT
+                                        $porcentajeOficial = Depreciacion::buscar($material, $uso, $state, $antiguedad);
+
+                                        // 3. LA CORRECCIÓN: Llenar ambos campos
+                                        if ($porcentajeOficial !== null) {
+                                            // A. Guardamos la evidencia oficial
+                                            $set('porcentaje_depreciacion_calculado', $porcentajeOficial);
+
+                                            // B. Pre-llenamos el campo manual para facilitar el trabajo
+                                            $set('porcentaje_depreciacion_manual', $porcentajeOficial);
+                                        }
+                                    })
                                     ->required(),
+
+                                // CAMPO 1: El valor oficial (Solo lectura / Auditoría)
+                                TextInput::make('porcentaje_depreciacion_calculado')
+                                    ->label('RNT Oficial')
+                                    ->disabled() // El usuario no debe editar esto directamente
+                                    ->dehydrated() // Importante: Permite que se guarde en BD aunque esté disabled
+                                    ->numeric()
+                                    ->suffix('%'),
+
+                                // CAMPO 2: El valor final a aplicar (Editable)
+                                TextInput::make('porcentaje_depreciacion_manual')
+                                    ->label('Depreciación a Aplicar')
+                                    ->helperText('Edite solo si el criterio técnico difiere del RNT.')
+                                    ->numeric()
+                                    ->suffix('%')
+                                    ->required(), // Es obligatorio porque el cálculo matemático lo necesita
                             ]),
                     ]),
 
                 Section::make('Categorías y Componentes')
                     ->description('Seleccione la categoría (A-J) para cada componente estructural.')
                     ->schema([
-                        Grid::make(4) // 4 columnas para compactar
+                        Grid::make(2) // 4 columnas para compactar
                             ->schema([
                                 // Usamos Select simple para no saturar visualmente
                                 $this->makeCategoriaSelect('muros_columnas', 'Muros y Columnas'),
