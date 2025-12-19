@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources\Personas\Schemas;
 
+use Illuminate\Validation\Rules\Unique;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Section;
@@ -38,9 +39,19 @@ class PersonaForm
                             ->required(),
 
                         TextInput::make('numero_documento')
+                            ->label('Número Documento')
                             ->required()
                             ->maxLength(15)
-                            ->unique(ignoreRecord: true),
+                            // Regla de Unicidad con Scope (Filtro) por Tenant
+                            ->unique(
+                                table: 'personas',
+                                column: 'numero_documento',
+                                ignoreRecord: true, // Importante: Permite editar el mismo registro sin error
+                                modifyRuleUsing: function (Unique $rule) {
+                                    // Aquí le decimos: "Solo busca duplicados donde el tenant_id sea el mío"
+                                    return $rule->where('tenant_id', auth()->user()->tenant_id);
+                                }
+                            ),
 
                         // 3. Campos Condicionales
                         TextInput::make('nombres')

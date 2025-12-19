@@ -6,6 +6,7 @@ use App\Models\PredioFisico;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\Action;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -71,6 +72,12 @@ class PredioFisicosTable
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('imprimir_pu')
+                    ->label('PU')
+                    ->icon('heroicon-o-document')
+                    ->color('info') // Azul
+                    ->url(fn(PredioFisico $record) => route('imprimir.pu', $record->id))
+                    ->openUrlInNewTab(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
