@@ -22,7 +22,7 @@ class ArancelRusticoImporter extends Importer
                 ->rules(['required', 'size:4']),
 
             ImportColumn::make('grupo_tierras')
-                ->rules(['required', 'in:A,C,P,E']),
+                ->rules(['required', 'in:A,C,P,X']),
 
             // Estos pueden venir vacíos en el CSV si es Eriazo
             ImportColumn::make('distancia'),

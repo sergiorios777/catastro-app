@@ -11,7 +11,7 @@ class ArancelRustico extends Model
         'anio_fiscal_id',
         'ubigeo_provincia', // Clave: 4 dígitos (Ej: 1601)
 
-        'grupo_tierras',    // A, C, P, E
+        'grupo_tierras',    // A, C, P, X
         'distancia',        // hasta_1km, de_1_2km... (Nullable)
         'calidad_agrologica', // alta, media, baja (Nullable)
 
@@ -37,8 +37,8 @@ class ArancelRustico extends Model
             ->where('ubigeo_provincia', $ubigeoProvincia)
             ->where('grupo_tierras', $grupo);
 
-        // Regla 1: Tierras Eriazas (E) -> No importa distancia ni calidad
-        if ($grupo === 'E') {
+        // Regla 1: Tierras Eriazas (X) -> No importa distancia ni calidad
+        if ($grupo === 'X') {
             return $query->value('valor_arancel');
         }
 

@@ -50,6 +50,6 @@ class Depreciacion extends Model
             }
         }
 
-        return 99; // Mayor a 50
+        return 499; // Mayor a 50
     }
 }

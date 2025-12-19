@@ -43,10 +43,10 @@ class DepreciacionsTable
                         default => '',
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'casa_habitacion' => '1.1 Casa Habitación / Depto',
-                        'tienda_deposito' => '1.2 Tiendas / Depósitos',
-                        'edificio_oficina' => '1.3 Edificios / Oficinas',
-                        'industria_salud' => '1.4 Clínicas / Industrias',
+                        'casa_habitacion' => 'Casa Habitación / Depto',
+                        'tienda_deposito' => 'Tiendas / Depósitos',
+                        'edificio_oficina' => 'Edificios / Oficinas',
+                        'industria_salud' => 'Clínicas / Industrias',
                         'otros' => 'Otros Fines',
                         default => $state,
                     })
@@ -70,7 +70,12 @@ class DepreciacionsTable
                     ->label('Antigüedad')
                     ->sortable()
                     ->alignCenter()
-                    ->formatStateUsing(fn(string $state) => "{$state} años"),
+                    ->formatStateUsing(function (string $state) {
+                        if ($state > 50) {
+                            return "Más de 50 años";
+                        }
+                        return "Hasta {$state} años";
+                    }),
 
                 // 5. El Porcentaje (Dato Clave)
                 TextColumn::make('porcentaje')

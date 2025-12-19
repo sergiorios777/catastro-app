@@ -32,10 +32,10 @@ class ArancelRusticosTable
                         '1602' => 'Alto Amazonas',
                         '1603' => 'Loreto',
                         '1604' => 'Mariscal Ramón Castilla',
-                        '1605' => 'Putumayo',
-                        '1606' => 'Requena',
-                        '1607' => 'Ucayali',
-                        '1608' => 'Datem del Marañón',
+                        '1605' => 'Requena',
+                        '1606' => 'Ucayali',
+                        '1607' => 'Datem del Marañón',
+                        '1608' => 'Putumayo',
                         default => 'Ubigeo ' . $state,
                     }),
 
@@ -47,14 +47,14 @@ class ArancelRusticosTable
                         'A' => 'success', // Cultivo en Limpio (Verde)
                         'C' => 'info',    // Permanente (Azul)
                         'P' => 'warning', // Pastos (Amarillo)
-                        'E' => 'danger',  // Eriazo (Rojo)
+                        'X' => 'danger',  // Eriazo (Rojo)
                         default => 'gray',
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
                         'A' => 'A - Cultivo en Limpio',
                         'C' => 'C - Cultivo Permanente',
                         'P' => 'P - Pastos',
-                        'E' => 'E - Eriazo',
+                        'X' => 'X - Eriazo',
                         default => $state,
                     })
                     ->sortable(),
@@ -90,14 +90,14 @@ class ArancelRusticosTable
                         'A' => 'A - Aptas para Cultivo en Limpio',
                         'C' => 'C - Aptas para Cultivo Permanente',
                         'P' => 'P - Aptas para Pastos',
-                        'E' => 'E - Tierras Eriazas',
+                        'X' => 'X - Tierras Eriazas',
                     ]),
 
                 SelectFilter::make('ubigeo_provincia')
                     ->label('Provincia')
                     ->options([
                         '1601' => 'Maynas',
-                        '1605' => 'Putumayo',
+                        '1608' => 'Putumayo',
                         // Agrega las que necesites filtrar frecuentemente
                     ]),
             ])
