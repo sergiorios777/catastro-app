@@ -20,6 +20,14 @@ class Caja extends Model
         'observaciones'
     ];
 
+    protected $casts = [
+        'fecha_apertura' => 'datetime', // <--- Esto soluciona el error
+        'fecha_cierre' => 'datetime',   // <--- Esto previene el error en el cierre
+        'monto_apertura' => 'decimal:2',
+        'total_recaudado' => 'decimal:2',
+        'monto_cierre' => 'decimal:2',
+    ];
+
     public function pagos(): HasMany
     {
         return $this->hasMany(Pago::class);

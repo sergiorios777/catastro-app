@@ -6,10 +6,12 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn; // O TextColumn con badge() en v3
 use Filament\Forms\Components\TextInput as FormTextInput; // Alias para evitar conflicto
+use Filament\Notifications\Notification;
 
 class CajasTable
 {
@@ -86,8 +88,40 @@ class CajasTable
                             'estado' => 'cerrada',
                         ]);
 
-                        // Aquí podrías agregar notificación de "Cuadre" (Si sobra o falta dinero)
+                        // OJO: Filament Action nativa no abre pestañas nuevas fácilmente desde el callback PHP.
+                        // Lo más sencillo es mostrar una notificación con un botón (Action) dentro.
+            
+                        Notification::make()
+                            ->title('Caja Cerrada')
+                            ->success()
+                            ->actions([
+                                Action::make('imprimir')
+                                    ->label('Imprimir Arqueo')
+                                    ->button()
+                                    ->url(route('imprimir.arqueo', ['caja' => $record->id]))
+                                    ->openUrlInNewTab(),
+                            ])
+                            ->send();
                     }),
+                // NUEVA ACCIÓN: Imprimir Arqueo
+                // GRUPO DE REPORTES (Visible si NO está abierta)
+                ActionGroup::make([
+                    Action::make('imprimir_arqueo_a4')
+                        ->label('Reporte A4')
+                        ->icon('heroicon-o-document-text')
+                        ->url(fn($record) => route('imprimir.arqueo', ['caja' => $record->id]))
+                        ->openUrlInNewTab(),
+
+                    Action::make('imprimir_arqueo_ticket')
+                        ->label('Ticket 80mm')
+                        ->icon('heroicon-o-receipt-percent')
+                        ->url(fn($record) => route('imprimir.arqueo_ticket', ['caja' => $record->id]))
+                        ->openUrlInNewTab(),
+                ])
+                    ->label('Reportes')
+                    ->icon('heroicon-m-printer')
+                    ->color('gray')
+                    ->visible(fn($record) => $record->estado !== 'abierta'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
