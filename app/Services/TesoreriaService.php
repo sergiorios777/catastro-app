@@ -44,7 +44,7 @@ class TesoreriaService
                 'tenant_id' => $user->tenant_id,
                 'caja_id' => $caja->id,
                 'determinacion_predial_id' => $deuda->id,
-                'serie' => '001', // Serie por defecto
+                'serie' => 'E001', // Serie por defecto
                 'numero' => $nuevoNumero,
                 'monto_total' => $deuda->impuesto_calculado, // Asumimos pago total por ahora
                 'metodo_pago' => $datosPago['metodo_pago'] ?? 'efectivo',

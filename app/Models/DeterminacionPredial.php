@@ -42,4 +42,9 @@ class DeterminacionPredial extends Model
     {
         return $this->belongsTo(AnioFiscal::class);
     }
+
+    public function pago()
+    {
+        return $this->hasOne(Pago::class);
+    }
 }

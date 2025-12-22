@@ -39,4 +39,9 @@ class Pago extends Model
     {
         return $this->belongsTo(User::class, 'procesado_por');
     }
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
 }

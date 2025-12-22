@@ -25,6 +25,11 @@ class Caja extends Model
         return $this->hasMany(Pago::class);
     }
 
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
     public function cajero(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
