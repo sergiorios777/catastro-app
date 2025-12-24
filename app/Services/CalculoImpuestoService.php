@@ -6,6 +6,8 @@ use App\Models\Persona;
 use App\Models\AnioFiscal;
 use App\Models\DeterminacionPredial;
 use App\Models\PropietarioPredio;
+use App\Models\ArancelUrbano;
+use App\Models\ArancelRustico;
 
 class CalculoImpuestoService
 {
@@ -24,8 +26,9 @@ class CalculoImpuestoService
 
     /**
      * Calcula y guarda/actualiza la determinación del impuesto
+     * @param array $sobrescrituras Array opcional [predio_id => ['tipo_calzada' => 'tierra', ...]]
      */
-    public function generarDeterminacion(): DeterminacionPredial
+    public function generarDeterminacion(array $sobrescrituras = []): DeterminacionPredial
     {
         // 1. Obtener todos los predios del contribuyente en este Tenant
         // Filtramos solo los que están vigentes como propietarios
@@ -42,7 +45,14 @@ class CalculoImpuestoService
         foreach ($relaciones as $relacion) {
             $predio = $relacion->predioFisico;
 
-            // Instanciamos el servicio que creamos ayer para cada predio
+            // --- LÓGICA DE SIMULACIÓN / HISTÓRICO ---
+            // Si hay datos simulados para este predio, los "inyectamos" temporalmente
+            if (isset($sobrescrituras[$predio->id])) {
+                $predio->fill($sobrescrituras[$predio->id]);
+                // OJO: fill() solo cambia en memoria, NO guarda en BD. ¡Exactamente lo que queremos!
+            }
+
+            // Instanciamos el servicio que creamos para cada predio
             $servicioPredio = new CalculoAutoavaluoService($predio, $this->anio);
             $totales = $servicioPredio->calcularTotal();
 
@@ -132,5 +142,39 @@ class CalculoImpuestoService
         $impuesto += ($montoRestante * 0.010);
 
         return $impuesto;
+    }
+
+    /**
+     * Función auxiliar para buscar el precio en las tablas de aranceles
+     */
+    private function obtenerArancelM2($predio): float
+    {
+        if ($predio->tipo_predio === 'urbano') {
+            // Buscamos en Arancel Urbano
+            $arancel = ArancelUrbano::where('anio_fiscal_id', $this->anioFiscal->id)
+                ->where('ubigeo_distrito', $predio->tenant->ubigeo ?? '000000') // Asumiendo relación tenant
+                ->where('tipo_calzada', $predio->tipo_calzada)
+                ->where('ancho_via', $predio->ancho_via)
+                ->where('tiene_agua', $predio->tiene_agua)
+                ->where('tiene_desague', $predio->tiene_desague)
+                ->where('tiene_luz', $predio->tiene_luz)
+                ->first();
+
+            return $arancel ? (float) $arancel->valor_arancel : 0.0;
+        }
+
+        if ($predio->tipo_predio === 'rustico') {
+            // Buscamos en Arancel Rústico
+            // Nota: Ajusta 'ubigeo_provincia' según tu lógica real de ubicación
+            $arancel = ArancelRustico::where('anio_fiscal_id', $this->anioFiscal->id)
+                ->where('grupo_tierras', $predio->grupo_tierras)
+                ->where('distancia', $predio->distancia)
+                ->where('calidad_agrologica', $predio->calidad_agrologica)
+                ->first();
+
+            return $arancel ? (float) $arancel->valor_arancel : 0.0;
+        }
+
+        return 0.0;
     }
 }

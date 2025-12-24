@@ -79,6 +79,9 @@ class PropietariosRelationManager extends RelationManager
                     ->label('Agregar Existente')
                     ->modalHeading('Vincular Propietario Existente')
                     ->recordSelectSearchColumns(['numero_documento', 'nombres', 'apellidos', 'razon_social'])
+                    // --- NUEVO: PERSONALIZAMOS LA ETIQUETA DEL SELECTOR ---
+                    ->recordTitle(fn($record) => "{$record->numero_documento} - " . ($record->razon_social ?: "{$record->nombres} {$record->apellidos}"))
+                    // -----------------------------------------------------
                     ->form(fn(AttachAction $action): array => [
                         $action->getRecordSelect(),
 

@@ -58,28 +58,35 @@ class CalculoAutoavaluoService
 
     protected function calcularTerreno(): float
     {
-        $area = $this->predio->area_terreno; // [cite: 25]
+        $area = $this->predio->area_terreno;
 
-        // Usamos el campo real de tu tabla predios_fisicos [cite: 26]
+        $valorArancel = 0;
+
         if ($this->predio->tipo_predio === 'urbano') {
-            // Lógica Urbana: Buscar por Ubigeo de Distrito
-            // (Aquí idealmente cruzarías con Manzana/Vía, por ahora tomamos el promedio del distrito)
-            $arancel = ArancelUrbano::where('anio_fiscal_id', $this->anioId)
-                ->where('ubigeo_distrito', $this->ubigeo) // [cite: 17]
-                ->avg('valor_arancel') ?? 0;
+            // Lógica Urbana EXACTA
+            $valorArancel = ArancelUrbano::where('anio_fiscal_id', $this->anioId)
+                ->where('ubigeo_distrito', $this->ubigeo)
+                // Aquí usamos los campos que el predio tiene en memoria
+                ->where('tipo_calzada', $this->predio->tipo_calzada)
+                ->where('ancho_via', $this->predio->ancho_via)
+                ->where('tiene_agua', $this->predio->tiene_agua)
+                ->where('tiene_desague', $this->predio->tiene_desague)
+                ->where('tiene_luz', $this->predio->tiene_luz)
+                ->value('valor_arancel'); // 'value' trae el campo directo, o null
         } else {
-            // Lógica Rústica: Buscar por Ubigeo de Provincia (4 primeros dígitos)
+            // Lógica Rústica EXACTA
             $ubigeoProv = substr($this->ubigeo, 0, 4);
 
-            // Asumimos un promedio para 'A' (Cultivo en Limpio) si no hay detalle
-            // Agregar campo 'grupo_tierras' al predio para ser exactos
-            $arancel = ArancelRustico::where('anio_fiscal_id', $this->anioId)
-                ->where('ubigeo_provincia', $ubigeoProv) // 
-                ->where('grupo_tierras', 'A')
-                ->avg('valor_arancel') ?? 0;
+            $valorArancel = ArancelRustico::where('anio_fiscal_id', $this->anioId)
+                ->where('ubigeo_provincia', $ubigeoProv)
+                ->where('grupo_tierras', $this->predio->grupo_tierras)
+                ->where('distancia', $this->predio->distancia)
+                ->where('calidad_agrologica', $this->predio->calidad_agrologica)
+                ->value('valor_arancel');
         }
 
-        return $area * $arancel;
+        // Si no encuentra arancel (ej: configuración faltante), devolvemos 0 o podrías lanzar error.
+        return $area * ($valorArancel ?? 0);
     }
 
     protected function calcularConstrucciones(): float

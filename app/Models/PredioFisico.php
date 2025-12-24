@@ -31,11 +31,22 @@ class PredioFisico extends Model
         'zona',
         'estado',
         'es_cuc_provisional',
+        'tipo_calzada',
+        'ancho_via',
+        'tiene_agua',
+        'tiene_desague',
+        'tiene_luz',
+        'grupo_tierras',
+        'distancia',
+        'calidad_agrologica',
     ];
 
     protected $casts = [
         'area_terreno' => 'decimal:4', // Asegura que PHP lo trate como número con decimales
         'es_cuc_provisional' => 'boolean',
+        'tiene_agua' => 'boolean',
+        'tiene_desague' => 'boolean',
+        'tiene_luz' => 'boolean',
     ];
 
     protected static function boot()
