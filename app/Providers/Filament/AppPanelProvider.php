@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Models\Tenant;
+use App\Filament\App\Pages\EditMunicipalidadProfile;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -30,6 +31,7 @@ class AppPanelProvider extends PanelProvider
             ->login()
             // --- CONFIGURACIÓN MULTI-TENANT ---
             ->tenant(Tenant::class, slugAttribute: 'slug') // Le dice a Filament que use el modelo Tenant y la columna 'slug'
+            ->tenantProfile(EditMunicipalidadProfile::class)
             // ----------------------------------
             ->colors([
                 'primary' => Color::Amber,

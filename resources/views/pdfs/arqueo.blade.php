@@ -106,7 +106,16 @@
 <body>
 
     <div class="header">
-        <div>{{ $municipio->nombre ?? 'MUNICIPALIDAD' }}</div>
+        @if($municipio->logo)
+            <img src="{{ public_path('storage/' . $municipio->logo) }}" style="width: 60px;">
+        @endif
+        <div class="bold">{{ strtoupper($municipio->name) ?? 'MUNICIPALIDAD' }}</div>
+        <div>RUC: {{ $municipio->ruc ?? '-----------' }}</div>
+        @if($municipio->direccion_fiscal)
+            <div style="font-size: 9px;">
+                {{ $municipio->direccion_fiscal }}
+            </div>
+        @endif
         <div class="titulo">REPORTE DE CIERRE DE CAJA</div>
         <div>Fecha de Impresión: {{ now()->format('d/m/Y H:i:s') }}</div>
     </div>

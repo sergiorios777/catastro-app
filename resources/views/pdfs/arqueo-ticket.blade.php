@@ -53,9 +53,19 @@
 
 <body>
     <div class="center">
-        <div class="bold">{{ $municipio->nombre ?? 'MUNICIPALIDAD' }}</div>
-        <div>CIERRE DE CAJA</div>
-        <div>{{ now()->format('d/m/Y H:i') }}</div>
+        @if($municipio->logo)
+            <img src="{{ public_path('storage/' . $municipio->logo) }}" style="width: 60px;">
+        @endif
+        <div class="bold">{{ strtoupper($municipio->name) ?? 'MUNICIPALIDAD' }}</div>
+        <div>RUC: {{ $municipio->ruc ?? '-----------' }}</div>
+        @if($municipio->direccion_fiscal)
+            <div style="font-size: 9px;">
+                {{ Str::limit($municipio->direccion_fiscal, 40) }}
+            </div>
+        @endif
+        <div></div>CIERRE DE CAJA
+    </div>
+    <div>{{ now()->format('d/m/Y H:i') }}</div>
     </div>
 
     <div class="line"></div>

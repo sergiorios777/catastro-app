@@ -86,14 +86,64 @@
             margin: 0 auto;
             padding-top: 5px;
         }
+
+        /* Agrega esto para el logo */
+        .logo-img {
+            max-width: 80px;
+            max-height: 80px;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .header-content {
+            text-align: center;
+        }
     </style>
 </head>
 
 <body>
 
     <div class="header">
-        <div class="municipio-nombre">{{ $municipio->nombre ?? 'MUNICIPALIDAD DISTRITAL' }}</div>
-        <div>RUC: {{ $municipio->ruc ?? '20000000001' }}</div>
+        @php
+            $logoData = null;
+            // 1. Verificamos si hay logo en la base de datos
+            if ($municipio->logo) {
+                // 2. Obtenemos la ruta FÍSICA real (sin pasar por el link público)
+                // Filament guarda en storage/app/public por defecto
+                $path = storage_path('app/public/' . $municipio->logo);
+
+                // 3. Verificamos si el archivo existe en el disco
+                if (file_exists($path)) {
+                    // 4. Leemos el archivo y lo convertimos a Base64
+                    $type = pathinfo($path, PATHINFO_EXTENSION);
+                    $data = file_get_contents($path);
+                    $logoData = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                }
+            }
+        @endphp
+        @if($logoData)
+            <img src="{{ $logoData }}" class="logo-img" alt="Logo Municipal">
+        @else
+            <div class="logo-img"
+                style="border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 9px;">
+                Sin Logo
+            </div>
+        @endif
+
+        <div class="municipio-nombre">{{ $municipio->name }}</div>
+        @if($municipio->slogan)
+            <div style="font-style: italic; font-size: 10px; margin-bottom: 5px;">
+                "{{ $municipio->slogan }}"
+            </div>
+        @endif
+
+        <div>RUC: {{ $municipio->ruc ?? '-----------' }}</div>
+        @if($municipio->direccion_fiscal)
+            <div style="font-size: 9px;">
+                {{ $municipio->direccion_fiscal }}
+            </div>
+        @endif
         <div class="titulo-doc">RECIBO DE INGRESO</div>
         <div>N° {{ $pago->serie }} - {{ $pago->numero }}</div>
     </div>

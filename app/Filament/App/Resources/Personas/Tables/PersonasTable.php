@@ -33,6 +33,11 @@ class PersonasTable
                             ->orderBy('razon_social', $direction);
                     }),
 
+                TextColumn::make('predio_fisicos_count')
+                    ->counts('predioFisicos')
+                    ->label('N° Predios')
+                    ->sortable(),
+
                 TextColumn::make('tipo_persona')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {

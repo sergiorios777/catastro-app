@@ -63,8 +63,13 @@
 
 <body>
     <div class="center">
-        <div class="titulo">{{ $municipio->nombre ?? 'MUNICIPALIDAD' }}</div>
-        <div>RUC: {{ $municipio->ruc ?? '---' }}</div>
+        <div class="titulo">{{ strtoupper($municipio->nombre) ?? 'MUNICIPALIDAD' }}</div>
+        <div>RUC: {{ $municipio->ruc ?? '-----------' }}</div>
+        @if($municipio->direccion_fiscal)
+            <div style="font-size: 9px;">
+                {{ Str::limit($municipio->direccion_fiscal, 40) }}
+            </div>
+        @endif
         <div class="line"></div>
         <div class="bold">RECIBO DE INGRESO</div>
         <div>{{ $pago->serie }} - {{ $pago->numero }}</div>
