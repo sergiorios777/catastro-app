@@ -169,7 +169,7 @@ class CalculoAutoavaluoService
                 ->first();
 
             if ($precioEncontrado) {
-                $totalM2 += $precioEncontrado->valor; // 
+                $totalM2 += $precioEncontrado->valor;
             }
         }
 
