@@ -152,10 +152,10 @@ class ConstruccionesRelationManager extends RelationManager
                         Grid::make(2) // 4 columnas para compactar
                             ->schema([
                                 // Usamos Select simple para no saturar visualmente
-                                $this->makeCategoriaSelect('muros_columnas', 'Muros y Columnas'),
-                                $this->makeCategoriaSelect('techos', 'Techos'),
+                                $this->makeCategoriaSelect('muros_columnas', 'Muros y Columnas')->required(),
+                                $this->makeCategoriaSelect('techos', 'Techos')->required(),
                                 $this->makeCategoriaSelect('pisos', 'Pisos'),
-                                $this->makeCategoriaSelect('puertas_ventanas', 'Puertas/Ventanas'),
+                                $this->makeCategoriaSelect('puertas_ventanas', 'Puertas/Ventanas')->required(),
                                 $this->makeCategoriaSelect('revestimientos', 'Revestimientos'),
                                 $this->makeCategoriaSelect('banos', 'Baños'),
                                 $this->makeCategoriaSelect('inst_electricas_sanitarias', 'Inst. Eléctricas'),
@@ -212,6 +212,12 @@ class ConstruccionesRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('techos')
                     ->label('Techos')
+                    ->alignCenter()
+                    ->badge()
+                    ->color('info'),
+
+                Tables\Columns\TextColumn::make('puertas_ventanas')
+                    ->label('Puert./Vent.')
                     ->alignCenter()
                     ->badge()
                     ->color('info'),

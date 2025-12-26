@@ -39,9 +39,11 @@ class PredioFisico extends Model
         'grupo_tierras',
         'distancia',
         'calidad_agrologica',
+        'info_complementaria',
     ];
 
     protected $casts = [
+        'info_complementaria' => 'array',
         'area_terreno' => 'decimal:4', // Asegura que PHP lo trate como número con decimales
         'es_cuc_provisional' => 'boolean',
         'tiene_agua' => 'boolean',
