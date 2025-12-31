@@ -12,6 +12,7 @@ use Filament\Actions\DissociateAction;
 use Filament\Actions\DissociateBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Placeholder;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
@@ -29,6 +30,31 @@ class ConstruccionesRelationManager extends RelationManager
 
     public function form(Schema $schema): Schema
     {
+        // Definimos la lógica de cálculo en una variable para reutilizarla
+        $calcularDepreciacion = function (Get $get, Set $set) {
+            // 1. Recopilar datos
+            $material = $get('material_estructural');
+            $uso = $get('uso_especifico');
+            $anio = (int) $get('anio_construccion');
+            $estado = $get('estado_conservacion'); // CORREGIDO: Usamos get, no state
+
+            // Validación: Si falta algún dato, no calculamos
+            if (!$material || !$uso || !$anio || !$estado) {
+                return;
+            }
+
+            $antiguedad = now()->year - $anio;
+
+            // 2. Buscar en la Matriz RNT
+            // Asumo que tu modelo Depreciacion tiene este método estático
+            $porcentajeOficial = Depreciacion::buscar($material, $uso, $estado, $antiguedad);
+
+            // 3. Establecer el valor
+            if ($porcentajeOficial !== null) {
+                $set('porcentaje_depreciacion_manual', $porcentajeOficial);
+            }
+        };
+
         return $schema
             ->components([
                 Section::make('Características Físicas')
@@ -60,12 +86,7 @@ class ConstruccionesRelationManager extends RelationManager
                                     ->numeric()
                                     ->minValue(1900)
                                     ->maxValue(now()->year)
-                                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                        // Recalcular antigüedad si cambia el año
-                                        $antiguedad = now()->year - (int) $state;
-                                        $set('temp_antiguedad_calculada', $antiguedad);
-                                        // Podrías disparar el cálculo de depreciación aquí también
-                                    })
+                                    ->afterStateUpdated($calcularDepreciacion)
                                     ->required(),
 
                                 Select::make('uso_especifico')
@@ -78,6 +99,7 @@ class ConstruccionesRelationManager extends RelationManager
                                         'otros' => 'Otro (Adobe/Madera)',
                                     ])
                                     ->live()
+                                    ->afterStateUpdated($calcularDepreciacion)
                                     ->required(),
 
                                 Select::make('material_estructural')
@@ -90,6 +112,7 @@ class ConstruccionesRelationManager extends RelationManager
                                         'drywall' => 'Drywall / Prefab.',
                                     ])
                                     ->live()
+                                    ->afterStateUpdated($calcularDepreciacion)
                                     ->required(),
 
                                 Select::make('estado_conservacion')
@@ -102,39 +125,16 @@ class ConstruccionesRelationManager extends RelationManager
                                     ])
                                     ->live()
                                     ->default('regular')
-                                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                        // 1. Recopilar datos
-                                        $material = $get('material_estructural');
-                                        $uso = $get('uso_especifico');
-                                        $anio = (int) $get('anio_construccion');
-
-                                        // Validación básica para no calcular con datos vacíos
-                                        if (!$material || !$uso || !$anio)
-                                            return;
-
-                                        $antiguedad = now()->year - $anio;
-
-                                        // 2. Buscar en la Matriz RNT
-                                        $porcentajeOficial = Depreciacion::buscar($material, $uso, $state, $antiguedad);
-
-                                        // 3. LA CORRECCIÓN: Llenar ambos campos
-                                        if ($porcentajeOficial !== null) {
-                                            // A. Guardamos la evidencia oficial
-                                            $set('porcentaje_depreciacion_calculado', $porcentajeOficial);
-
-                                            // B. Pre-llenamos el campo manual para facilitar el trabajo
-                                            $set('porcentaje_depreciacion_manual', $porcentajeOficial);
-                                        }
-                                    })
+                                    ->afterStateUpdated($calcularDepreciacion)
                                     ->required(),
 
-                                // CAMPO 1: El valor oficial (Solo lectura / Auditoría)
-                                TextInput::make('porcentaje_depreciacion_calculado')
-                                    ->label('RNT Oficial')
-                                    ->disabled() // El usuario no debe editar esto directamente
-                                    ->dehydrated() // Importante: Permite que se guarde en BD aunque esté disabled
-                                    ->numeric()
-                                    ->suffix('%'),
+                                // CAMPO 1: VISUALIZACIÓN
+                                Placeholder::make('calculo_depreciacion_preview')
+                                    ->label('Depreciación Calculada')
+                                    // Ahora el placeholder solo LEERÁ el valor, no lo escribirá
+                                    ->content(fn(Get $get) => $get('porcentaje_depreciacion_manual')
+                                        ? $get('porcentaje_depreciacion_manual') . '%'
+                                        : '-'),
 
                                 // CAMPO 2: El valor final a aplicar (Editable)
                                 TextInput::make('porcentaje_depreciacion_manual')

@@ -21,7 +21,7 @@ return new class extends Migration {
             ])->default('casa_habitacion')->after('material_estructural');
 
             // Porcentaje calculado automáticamente (se guarda para historial)
-            $table->decimal('porcentaje_depreciacion_calculado', 5, 2)->nullable();
+            // $table->decimal('porcentaje_depreciacion_calculado', 5, 2)->nullable();
 
             // Porcentaje manual (si el usuario quiere corregir el RNT)
             $table->decimal('porcentaje_depreciacion_manual', 5, 2)->nullable();
@@ -35,7 +35,7 @@ return new class extends Migration {
     {
         Schema::table('construccions', function (Blueprint $table) {
             $table->dropColumn('uso_especifico');
-            $table->dropColumn('porcentaje_depreciacion_calculado');
+            // $table->dropColumn('porcentaje_depreciacion_calculado');
             $table->dropColumn('porcentaje_depreciacion_manual');
         });
     }

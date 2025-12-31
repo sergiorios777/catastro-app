@@ -8,6 +8,7 @@ use App\Models\ValorUnitarioEdificacion;
 use App\Models\ArancelUrbano;
 use App\Models\ArancelRustico;
 use App\Models\AnioFiscal;
+use App\Models\Depreciacion;
 
 class CalculoAutoavaluoService
 {
@@ -99,9 +100,24 @@ class CalculoAutoavaluoService
             $valorUnitarioM2 = $this->obtenerValorUnitarioTotal($piso);
 
             // 2. Factor de Depreciación
-            // Usamos el campo manual que creamos (o el calculado si prefieres lógica estricta)
-            // Si es null, asumimos 0 depreciación (100% valor)
-            $porcentajeDepr = $piso->porcentaje_depreciacion_manual ?? 0; // [cite: 54]
+            // Si hay un mandato de depreciación manual se respeta
+            // Si no hay mandato, se calcula por defecto
+            $porcentajeDepr = 0; //
+
+            if ($piso->mandato_depreciacion_manual !== null) {
+                $porcentajeDepr = $piso->mandato_depreciacion_manual;
+            } else {
+                // Calculamos la edad antual del predio ($antiguedad)
+                $antiguedad = $this->anio - $piso->anio_construccion;
+                // Buscamos el valor exacto en la tabla de depreciación
+                $porcentajeDepr = Depreciacion::buscar(
+                    $piso->material_estructural,
+                    $piso->uso_especifico,
+                    $piso->estado_conservacion,
+                    $antiguedad
+                ) ?? 0;
+            }
+
             $factorDepreciacion = (100 - $porcentajeDepr) / 100;
 
             // 3. Fórmula: Area * Valor * (1 - Depreciación)
