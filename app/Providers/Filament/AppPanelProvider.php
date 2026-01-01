@@ -28,6 +28,7 @@ class AppPanelProvider extends PanelProvider
         return $panel
             ->id('app')
             ->path('app')
+            ->viteTheme('resources/css/filament/app/theme.css')
             ->login()
             // --- CONFIGURACIÓN MULTI-TENANT ---
             ->tenant(Tenant::class, slugAttribute: 'slug') // Le dice a Filament que use el modelo Tenant y la columna 'slug'

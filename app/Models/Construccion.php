@@ -35,6 +35,12 @@ class Construccion extends Model
         'valid_to',
     ];
 
+    protected $casts = [
+        'valid_from' => 'date',
+        'valid_to' => 'date',
+        'is_active' => 'boolean',
+    ];
+
     public function predioFisico(): BelongsTo
     {
         return $this->belongsTo(PredioFisico::class);

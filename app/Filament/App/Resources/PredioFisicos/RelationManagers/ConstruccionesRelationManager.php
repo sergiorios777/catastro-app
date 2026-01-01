@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources\PredioFisicos\RelationManagers;
 use App\Models\Depreciacion;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Actions\AssociateAction;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -166,6 +167,20 @@ class ConstruccionesRelationManager extends RelationManager
                     })
                     ->successNotificationTitle('Registro actualizado correctamente'),
                 DissociateAction::make(),
+                Action::make('historial')
+                    ->icon('heroicon-m-clock') // Un icono de reloj
+                    ->label('Ver Historial')
+                    ->color('gray')
+                    ->modalHeading('Historial de Cambios y Versiones')
+                    ->modalSubmitAction(false) // Ocultar botón de guardar
+                    ->modalCancelActionLabel('Cerrar')
+                    ->modalContent(function ($record) {
+                        // Usamos el método history() que creamos en el Trait
+                        // get() traerá todas las versiones (activas e inactivas)
+                        return view('filament.components.history-modal', [
+                            'records' => $record->history()->get()
+                        ]);
+                    }),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
