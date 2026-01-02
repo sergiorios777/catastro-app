@@ -2,7 +2,12 @@
 
 namespace App\Filament\App\Resources\PredioFisicos\Tables;
 
+use App\Filament\App\Resources\PredioFisicos\Schemas\PredioFisicoForm;
 use App\Models\PredioFisico;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Radio;
+use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -71,7 +76,60 @@ class PredioFisicosTable
                     ]),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->modalHeading('Actualizar Ficha Predial')
+                    ->modalWidth('7xl')
+                    // --- THE FIX: Use Schema $schema instead of Form $form ---
+                    ->form(function (Schema $schema) {
+                        return $schema->components([
+                            // A. Load original components
+                            Section::make('Datos del Predio')
+                                ->schema(PredioFisicoForm::getComponents())
+                                ->columns(2),
+
+                            // B. Version Control Question
+                            Section::make('Tipo de Operación')
+                                ->schema([
+                                    Radio::make('tipo_edicion')
+                                        ->label('¿Qué tipo de cambio está realizando?')
+                                        ->options([
+                                            'correccion' => 'Corrección de error (No genera historial)',
+                                            'actualizacion' => 'Actualización Física (Genera historial)',
+                                        ])
+                                        ->default('correccion')
+                                        ->formatStateUsing(fn($state) => $state ?? 'correccion')
+                                        ->required()
+                                        ->columnSpanFull(),
+                                ])
+                                ->secondary()
+                                ->icon('heroicon-o-exclamation-triangle'),
+                        ]);
+                    })
+                    ->using(function (Model $record, array $data): Model {
+                        $tipoEdicion = $data['tipo_edicion'] ?? 'actualizacion';
+                        unset($data['tipo_edicion']);
+
+                        if ($tipoEdicion === 'correccion') {
+                            $record->update($data);
+                            return $record;
+                        } else {
+                            return $record->createNewVersion($data);
+                        }
+                    })
+                    ->successNotificationTitle('Predio actualizado correctamente'),
+
+                // Botón de historial (justo debajo del EditAction)
+                Action::make('historial')
+                    ->label('Historial')
+                    ->icon('heroicon-m-clock')
+                    ->color('gray')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Cerrar')
+                    ->modalContent(fn($record) => view('filament.components.history-modal', [
+                        'records' => $record->history()->get()
+                    ])),
+
+                // 3. ACCIÓN DE IMPRIMIR TICKETS
                 Action::make('imprimir_pu')
                     ->label('PU')
                     ->icon('heroicon-o-document')

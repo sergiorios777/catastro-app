@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
+use App\Models\Traits\HasHistory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PredioFisico extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory, BelongsToTenant, HasHistory;
 
     // Laravel intenta buscar 'predio_fisicos', definimos la tabla por si acaso
     protected $table = 'predios_fisicos';
@@ -40,6 +41,11 @@ class PredioFisico extends Model
         'distancia',
         'calidad_agrologica',
         'info_complementaria',
+        'track_id',
+        'version',
+        'is_active',
+        'valid_from',
+        'valid_to',
     ];
 
     protected $casts = [
@@ -49,6 +55,9 @@ class PredioFisico extends Model
         'tiene_agua' => 'boolean',
         'tiene_desague' => 'boolean',
         'tiene_luz' => 'boolean',
+        'valid_from' => 'datetime',
+        'valid_to' => 'datetime',
+        'is_active' => 'boolean',
     ];
 
     protected static function boot()
