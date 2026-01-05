@@ -38,6 +38,7 @@ class PredioFisicoResource extends Resource
     public static function getRelations(): array
     {
         return [
+            RelationManagers\PredioavaluosRelationManager::class,
             RelationManagers\PropietariosRelationManager::class,
             RelationManagers\ConstruccionesRelationManager::class,
             RelationManagers\ObrasComplementariasRelationManager::class,

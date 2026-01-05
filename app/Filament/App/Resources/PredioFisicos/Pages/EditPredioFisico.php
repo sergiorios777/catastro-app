@@ -91,6 +91,7 @@ class EditPredioFisico extends EditRecord
     }
 
     // INTERCEPTAMOS EL GUARDADO
+    /*
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         // 1. Extraemos la decisión del usuario
@@ -118,4 +119,5 @@ class EditPredioFisico extends EditRecord
     {
         return $this->getResource()::getUrl('edit', ['record' => $this->record]);
     }
+    */
 }

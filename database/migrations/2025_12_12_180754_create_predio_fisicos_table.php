@@ -38,8 +38,9 @@ return new class extends Migration {
             // Lo pasamos a 'predios_fisicos_avaluo' Usamos decimal con alta precisión para el área
             // $table->decimal('area_terreno', 12, 4)->default(0); // Hasta 99,999,999.9999
 
+            $table->enum('tipo_predio', ['urbano', 'rustico'])->default('urbano'); // urbano, rustico
+
             // Lo pasamos a 'predios_fisicos_avaluo'
-            // $table->enum('tipo_predio', ['urbano', 'rustico'])->default('urbano'); // urbano, rustico
             // $table->string('zona')->nullable(); // residencial, comercial, etc.
 
             // 5. Estado y Control (Vital para el linaje)

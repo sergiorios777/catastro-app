@@ -14,11 +14,11 @@ return new class extends Migration {
             // 2. TABLA ESTADO / AVALÚO (Versionable - SCD Type 2)
 
             $table->id();
-            $table->foreignId('predio_id')->constrained('predios_fisicos')->cascadeOnDelete();
+            $table->uuid('track_id')->nullable()->index()->after('id');
+            $table->foreignId('predio_fisico_id')->constrained('predios_fisicos')->cascadeOnDelete();
 
             // Datos Económicos y Físicos Variables
             $table->decimal('area_terreno', 12, 4)->default(0);
-            $table->enum('tipo_predio', ['urbano', 'rustico'])->default('urbano');
             $table->string('zona')->nullable();
 
             // Características Arancelarias

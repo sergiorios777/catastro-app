@@ -116,6 +116,11 @@ class PredioFisico extends Model
         // NOTA: Aquí NO ponemos 'wherePivot('vigente', true)'. Queremos ver todo.
     }
 
+    public function predioFisicoAvaluos()
+    {
+        return $this->hasMany(PredioFisicoAvaluo::class);
+    }
+
     public function construcciones()
     {
         return $this->hasMany(Construccion::class);
