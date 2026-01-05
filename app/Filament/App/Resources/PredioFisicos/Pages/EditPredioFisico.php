@@ -12,6 +12,7 @@ use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\TextInput;
+use Illuminate\Database\Eloquent\Model;
 
 class EditPredioFisico extends EditRecord
 {
@@ -88,4 +89,35 @@ class EditPredioFisico extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    // INTERCEPTAMOS EL GUARDADO
+    /*
+    protected function handleRecordUpdate(Model $record, array $data): Model
+    {
+        // 1. Extraemos la decisión del usuario
+        $tipoEdicion = $data['tipo_edicion'] ?? 'actualizacion';
+
+        // 2. Limpiamos el array para que no intente guardar 'tipo_edicion' en la tabla
+        unset($data['tipo_edicion']);
+
+        if ($tipoEdicion === 'correccion') {
+            // Opción A: Actualización normal (UPDATE)
+            $record->update($data);
+            return $record;
+        } else {
+            // Opción B: Nueva Versión (INSERT + HISTORY)
+            // Usamos nuestro Trait HasHistory
+            $nuevoRegistro = $record->createNewVersion($data);
+
+            return $nuevoRegistro;
+        }
+    }
+
+    // Opcional: Redirigir al usuario al nuevo registro después de guardar
+    // Si no hacemos esto, se quedará viendo la versión "vieja" (inactiva)
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
+    }
+    */
 }

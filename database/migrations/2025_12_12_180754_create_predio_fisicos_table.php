@@ -35,11 +35,13 @@ return new class extends Migration {
             $table->decimal('longitud', 11, 8)->nullable();
 
             // 4. Características Físicas
-            // Usamos decimal con alta precisión para el área
-            $table->decimal('area_terreno', 12, 4)->default(0); // Hasta 99,999,999.9999
+            // Lo pasamos a 'predios_fisicos_avaluo' Usamos decimal con alta precisión para el área
+            // $table->decimal('area_terreno', 12, 4)->default(0); // Hasta 99,999,999.9999
 
-            $table->string('tipo_predio')->default('urbano'); // urbano, rustico
-            $table->string('zona')->nullable(); // residencial, comercial, etc.
+            $table->enum('tipo_predio', ['urbano', 'rustico'])->default('urbano'); // urbano, rustico
+
+            // Lo pasamos a 'predios_fisicos_avaluo'
+            // $table->string('zona')->nullable(); // residencial, comercial, etc.
 
             // 5. Estado y Control (Vital para el linaje)
             // activo: Predio vigente

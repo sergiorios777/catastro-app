@@ -29,9 +29,12 @@ class ArancelUrbanosTable
                 Tables\Columns\TextColumn::make('tipo_calzada')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'concreto', 'asfalto' => 'success',
-                        'tierra' => 'danger',
-                        default => 'warning',
+                        'tierra' => 'Tierra',
+                        'afirmado' => 'Afirmado',
+                        'empedrado' => 'Empedrado',
+                        'asfalto' => 'Asfalto',
+                        'concreto' => 'Concreto',
+                        default => $state,
                     }),
 
                 Tables\Columns\TextColumn::make('ancho_via')
