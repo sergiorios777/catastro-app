@@ -29,4 +29,9 @@ class Persona extends Model
             ->withTimestamps()
             ->wherePivot('vigente', true);
     }
+
+    public function determinaciones()
+    {
+        return $this->hasMany(DeterminacionPredial::class);
+    }
 }

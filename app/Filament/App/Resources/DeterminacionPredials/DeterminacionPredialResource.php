@@ -43,8 +43,8 @@ class DeterminacionPredialResource extends Resource
     {
         return [
             'index' => ListDeterminacionPredials::route('/'),
-            'create' => CreateDeterminacionPredial::route('/create'),
-            'edit' => EditDeterminacionPredial::route('/{record}/edit'),
+            //'create' => CreateDeterminacionPredial::route('/create'),
+            //'edit' => EditDeterminacionPredial::route('/{record}/edit'),
         ];
     }
 }
