@@ -9,6 +9,7 @@ use App\Filament\App\Resources\Contribuyentes\Schemas\ContribuyenteForm;
 use App\Filament\App\Resources\Contribuyentes\Tables\ContribuyentesTable;
 use App\Models\Persona;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -20,6 +21,7 @@ class ContribuyenteResource extends Resource
 
     protected static ?string $slug = 'contribuyentes';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|UnitEnum|null $navigationGroup = 'Determinación Predial';
 
     protected static ?string $recordTitleAttribute = 'contribuyente';
     protected static ?string $navigationLabel = 'Contribuyentes';

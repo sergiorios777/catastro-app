@@ -16,35 +16,52 @@ use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Database\Eloquent\Builder;
+use Livewire\Attributes\Url;
 
 class ListContribuyentes extends ListRecords
 {
     protected static string $resource = ContribuyenteResource::class;
 
+    #[Url]
+    public ?string $anio = null;
+
+    public function mount(): void
+    {
+        $this->anio = $this->anio ?? (string) date('Y');
+        parent::mount();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('emision_masiva')
-                ->label('Ejecutar Emisión Masiva')
-                ->color('primary')
+            Actions\Action::make('cambiar_anio')
+                ->label('Cambiar Año: ' . $this->anio)
+                ->icon('heroicon-m-calendar')
+                ->color('gray')
                 ->form([
-                    Select::make('anio_fiscal_id')
+                    Select::make('anio')
                         ->label('Año Fiscal')
-                        ->options(AnioFiscal::pluck('anio', 'id'))
-                        ->required()
-                        ->default(fn() => AnioFiscal::where('anio', date('Y'))->value('id')),
+                        ->options(AnioFiscal::pluck('anio', 'anio'))
+                        ->default($this->anio)
+                        ->required(),
                 ])
                 ->action(function (array $data) {
-                    $anioId = $data['anio_fiscal_id'];
-                    $anioFiscal = AnioFiscal::find($anioId);
+                    $this->redirect(ListContribuyentes::getUrl(['anio' => $data['anio']]));
+                }),
 
-                    if (!$anioFiscal) {
-                        Notification::make()->danger()->title('Año Fiscal inválido')->send();
+            Actions\Action::make('emision_masiva')
+                ->label('Ejecutar Emisión Masiva (' . $this->anio . ')')
+                ->color('primary')
+                ->requiresConfirmation()
+                ->action(function () {
+                    $anioId = AnioFiscal::where('anio', $this->anio)->value('id');
+
+                    if (!$anioId) {
+                        Notification::make()->danger()->title('Año Fiscal no configurado para ' . $this->anio)->send();
                         return;
                     }
 
                     // 1. Identificar IDs pendientes
-                    // Replicamos la logica del Tab 'pendientes' pero obteniendo IDs
                     $idsPendientes = Persona::query()
                         ->whereHas('predioFisicos', function ($q) {
                         $q->where('predios_fisicos.tenant_id', filament()->getTenant()->id);
@@ -55,50 +72,48 @@ class ListContribuyentes extends ListRecords
                         ->pluck('id');
 
                     if ($idsPendientes->isEmpty()) {
-                        Notification::make()->warning()->title('No hay pendientes para procesar')->send();
+                        Notification::make()->warning()->title('No hay pendientes para procesar en ' . $this->anio)->send();
                         return;
                     }
 
                     // 2. Despachar Batch de Jobs
-                    $jobs = $idsPendientes->map(fn($id) => new CalcularImpuestoJob($id, (int) $anioFiscal->anio));
+                    // Nota: CalcularImpuestoJob espera ID y AÑO (int).
+                    $jobs = $idsPendientes->map(fn($id) => new CalcularImpuestoJob($id, (int) $this->anio));
 
                     Bus::batch($jobs)
-                        ->name('Emisión Masiva Predial ' . $anioFiscal->anio)
+                        ->name('Emisión Masiva Predial ' . $this->anio)
                         ->dispatch();
 
                     Notification::make()
-                        ->title('Proceso en segundo plano iniciado')
-                        ->body("Se están procesando {$idsPendientes->count()} contribuyentes.")
+                        ->title('Proceso iniciado')
+                        ->body("Procesando {$idsPendientes->count()} contribuyentes para el año {$this->anio}.")
                         ->success()
                         ->send();
                 }),
-            //CreateAction::make(),
         ];
     }
 
     public function getTabs(): array
     {
-        // Recuperar el año real de la selección del usuario o sesión.
-        // Por ahora hardcodeamos al año actual o lógica de BD.
-        $anio = date('Y');
-        // Idealmente: $anioId = AnioFiscal::where('anio', $anio)->value('id');
-        // Pero para la query 'whereDoesntHave', necesitamos filtrar por la relación.
-
-        // Asumo que DeterminacionPredial tiene relación 'anioFiscal' que tiene columna 'anio',
-        // O DeterminacionPredial tiene 'anio_fiscal_id'. 
-        // Vamos a filtrar por el AÑO FISCAL ID si es posible, o por el año si tenemos la join.
-        // Simplificación: Usaremos whereHas('anioFiscal', function($q) use ($anio) { $q->where('anio', $anio); })
+        $anio = $this->anio;
 
         return [
-            'pendientes' => Tab::make('Pendientes de Cálculo')
+            'pendientes' => Tab::make('Pendientes ' . $anio)
                 ->icon('heroicon-m-clock')
                 ->modifyQueryUsing(fn(Builder $query) => $query->whereDoesntHave(
                     'determinaciones',
                     fn($q) =>
                     $q->whereHas('anioFiscal', fn($sub) => $sub->where('anio', $anio))
-                )),
+                ))
+                ->badge(fn() => Persona::whereHas('predioFisicos', function ($q) {
+                    $q->where('predios_fisicos.tenant_id', filament()->getTenant()->id);
+                })->whereDoesntHave(
+                        'determinaciones',
+                        fn($q) =>
+                        $q->whereHas('anioFiscal', fn($sub) => $sub->where('anio', $anio))
+                    )->count()),
 
-            'procesados' => Tab::make('Ya Calculados')
+            'procesados' => Tab::make('Calculados ' . $anio)
                 ->icon('heroicon-m-check-badge')
                 ->modifyQueryUsing(fn(Builder $query) => $query->whereHas(
                     'determinaciones',

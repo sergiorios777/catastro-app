@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PredioFisico extends Model
 {
-    use HasFactory, BelongsToTenant, HasHistory;
+    use HasFactory, BelongsToTenant;
 
     // Laravel intenta buscar 'predio_fisicos', definimos la tabla por si acaso
     protected $table = 'predios_fisicos';
@@ -27,11 +27,12 @@ class PredioFisico extends Model
         'lote',
         'latitud',
         'longitud',
-        'area_terreno',
+        // 'area_terreno',
         'tipo_predio',
         'zona',
         'estado',
         'es_cuc_provisional',
+        /*
         'tipo_calzada',
         'ancho_via',
         'tiene_agua',
@@ -46,18 +47,19 @@ class PredioFisico extends Model
         'is_active',
         'valid_from',
         'valid_to',
+        */
     ];
 
     protected $casts = [
-        'info_complementaria' => 'array',
-        'area_terreno' => 'decimal:4', // Asegura que PHP lo trate como número con decimales
+        // 'info_complementaria' => 'array',
+        // 'area_terreno' => 'decimal:4', // Asegura que PHP lo trate como número con decimales
         'es_cuc_provisional' => 'boolean',
-        'tiene_agua' => 'boolean',
-        'tiene_desague' => 'boolean',
-        'tiene_luz' => 'boolean',
-        'valid_from' => 'datetime',
-        'valid_to' => 'datetime',
-        'is_active' => 'boolean',
+        // 'tiene_agua' => 'boolean',
+        // 'tiene_desague' => 'boolean',
+        // 'tiene_luz' => 'boolean',
+        // 'valid_from' => 'datetime',
+        // 'valid_to' => 'datetime',
+        // 'is_active' => 'boolean',
     ];
 
     protected static function boot()
