@@ -98,7 +98,8 @@
             <tr style="border: none;">
                 <td style="border: none; width: 15%;"><strong>Código:</strong> {{ $determinacion->persona->id }}</td>
                 <td style="border: none; width: 50%;"><strong>Nombre:</strong> {{ $determinacion->persona->apellidos }}
-                    {{ $determinacion->persona->nombres }} {{ $determinacion->persona->razon_social }}</td>
+                    {{ $determinacion->persona->nombres }} {{ $determinacion->persona->razon_social }}
+                </td>
                 <td style="border: none;"><strong>Doc:</strong> {{ $determinacion->persona->numero_documento }}</td>
             </tr>
             <tr style="border: none;">
@@ -147,7 +148,8 @@
             <tr>
                 <td><strong>Impuesto Calculado (Anual):</strong></td>
                 <td class="text-right bold" style="font-size: 13px;">S/.
-                    {{ number_format($determinacion->impuesto_calculado, 2) }}</td>
+                    {{ number_format($determinacion->impuesto_calculado, 2) }}
+                </td>
             </tr>
             <tr>
                 <td><strong>Monto Mínimo a Pagar:</strong></td>
@@ -170,7 +172,7 @@
 
     <div style="margin-top: 50px; font-size: 9px; text-align: center;">
         Fecha de Emisión: {{ \Carbon\Carbon::parse($determinacion->fecha_emision)->format('d/m/Y H:i') }} | Usuario:
-        {{ auth()->user()->name }}
+        {{ $user_name }}
     </div>
 
 </body>

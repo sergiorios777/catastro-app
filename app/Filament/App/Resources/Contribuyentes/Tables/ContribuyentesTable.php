@@ -10,6 +10,7 @@ use Filament\Tables\Table;
 use Filament\Forms\Components\Select;
 use App\Models\Persona;
 use App\Models\AnioFiscal;
+use App\Models\PropietarioPredio;
 use App\Services\CalculoImpuestoService;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
@@ -84,6 +85,29 @@ class ContribuyentesTable
                             Notification::make()->danger()->title('Error')->body($e->getMessage())->send();
                         }
                     }),
+                Action::make('imprimir_hr')
+                    ->label('Imprimir HR')
+                    ->icon('heroicon-o-document-text')
+                    ->color('success') // Verde
+                    ->url(function (Persona $record, $livewire) {
+                        $anio = $livewire->anio ?? date('Y');
+                        $anioId = AnioFiscal::where('anio', $anio)->value('id');
+
+                        return route('imprimir.hr', [
+                            'id' => \App\Models\DeterminacionPredial::where('persona_id', $record->id)
+                                ->where('anio_fiscal_id', $anioId)
+                                ->first()?->id
+                        ]);
+                    })
+                    ->openUrlInNewTab() // Abrir PDF en otra pestaña
+                    ->visible(function (Persona $record, $livewire) {
+                        $anio = $livewire->anio ?? date('Y');
+                        $anioId = AnioFiscal::where('anio', $anio)->value('id');
+
+                        return \App\Models\DeterminacionPredial::where('persona_id', $record->id)
+                            ->where('anio_fiscal_id', $anioId)
+                            ->exists();
+                    }), // Solo mostrar si ya se calculó el impuesto
                 //EditAction::make(),
             ])
             ->toolbarActions([

@@ -23,6 +23,8 @@ class DeterminacionPredialResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Determinación Predial';
 
     protected static ?string $recordTitleAttribute = 'Deudas';
+    protected static ?string $modelLabel = 'Determinación Predial';
+    protected static ?string $pluralModelLabel = 'Determinación Prediales';
 
     public static function form(Schema $schema): Schema
     {

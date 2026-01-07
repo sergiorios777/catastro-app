@@ -8,7 +8,9 @@ use Filament\Resources\Pages\ListRecords;
 use App\Filament\App\Resources\Contribuyentes;
 use App\Models\AnioFiscal;
 use App\Models\Persona;
+use App\Models\DeterminacionPredial;
 use App\Jobs\CalcularImpuestoJob;
+use App\Jobs\GenerarDeclaracionesMasivasJob;
 use Filament\Actions;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -87,6 +89,49 @@ class ListContribuyentes extends ListRecords
                     Notification::make()
                         ->title('Proceso iniciado')
                         ->body("Procesando {$idsPendientes->count()} contribuyentes para el año {$this->anio}.")
+                        ->success()
+                        ->send();
+                }),
+
+            // NUEVA ACCIÓN: IMPRESIÓN MASIVA
+            Actions\Action::make('imprimir_masivo')
+                ->label('Descargar HR/PU Masivo (' . $this->anio . ')')
+                ->icon('heroicon-o-printer')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('Generación Masiva de PDFs')
+                ->modalDescription('Este proceso generará un archivo ZIP con todas las declaraciones juradas (HR y PU) de los contribuyentes que YA tienen el impuesto calculado para este año. Puede tardar varios minutos.')
+                ->action(function () {
+                    // Verificar si hay año fiscal
+                    $anioId = AnioFiscal::where('anio', $this->anio)->value('id');
+                    if (!$anioId) {
+                        Notification::make()->danger()->title('Año Fiscal no configurado')->send();
+                        return;
+                    }
+
+                    // Verificar si hay algo calculado
+                    $count = DeterminacionPredial::where('anio_fiscal_id', $anioId)
+                        ->where('tenant_id', filament()->getTenant()->id)
+                        ->count();
+
+                    if ($count === 0) {
+                        Notification::make()->warning()
+                            ->title("No hay impuestos calculados para el año {$this->anio}")
+                            ->body("Primero ejecute la 'Emisión Masiva' de cálculo.")
+                            ->send();
+                        return;
+                    }
+
+                    // Despachar Job
+                    GenerarDeclaracionesMasivasJob::dispatch(
+                        (int) $this->anio,
+                        auth()->id(),
+                        filament()->getTenant()->id
+                    );
+
+                    Notification::make()
+                        ->title('Generación de PDFs iniciada')
+                        ->body('Recibirá una notificación cuando el archivo ZIP esté listo para descargar.')
                         ->success()
                         ->send();
                 }),
