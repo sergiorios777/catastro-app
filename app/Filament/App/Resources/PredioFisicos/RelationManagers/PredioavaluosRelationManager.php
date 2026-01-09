@@ -254,6 +254,25 @@ class PredioavaluosRelationManager extends RelationManager
                                 ->label('Especificar otra ubic.')
                                 ->statePath('info_complementaria.ubicacion_predio_otro')
                                 ->visible(fn(Get $get) => $get('info_complementaria.ubicacion_predio') === 'otros'),
+                            Select::make('uso_predio_rustico')
+                                ->visible(fn() => $this->getTipoPredio() === 'rustico')
+                                ->label('Uso pricipal del predio rural')
+                                ->options([
+                                    'vivienda_rural' => 'Vivienda',
+                                    'produccion_agropecuaria' => 'Producción agropecuaria',
+                                    'campo_ferial' => 'Campo ferial',
+                                    'produccion_forestal' => 'Producción forestal',
+                                    'conservacion' => 'Área de conservación',
+                                    'otro' => 'Otro (especificar)',
+                                ])
+                                ->default('vivienda_rural')
+                                ->required()
+                                ->live()
+                                ->statePath('info_complementaria.uso_predio_rustico'),
+                            TextInput::make('uso_predio_rustico_otro')
+                                ->label('Especificar otro uso')
+                                ->statePath('info_complementaria.uso_predio_rustico_otro')
+                                ->visible(fn(Get $get) => $get('info_complementaria.uso_predio_rustico') === 'otro'),
                         ]),
 
                     // Sección 2: Linderos

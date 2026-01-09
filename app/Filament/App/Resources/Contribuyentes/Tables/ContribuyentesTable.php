@@ -109,14 +109,7 @@ class ContribuyentesTable
                             ]);
                         })
                         ->openUrlInNewTab() // Abrir PDF en otra pestaña
-                        ->visible(function (Persona $record, $livewire) {
-                            $anio = $livewire->anio ?? date('Y');
-                            $anioId = AnioFiscal::where('anio', $anio)->value('id');
-
-                            return \App\Models\DeterminacionPredial::where('persona_id', $record->id)
-                                ->where('anio_fiscal_id', $anioId)
-                                ->exists();
-                        }), // Solo mostrar si ya se calculó el impuesto
+                    ,
                     Action::make('imprimir_pu')
                         ->label('Imprimir PU')
                         ->icon('heroicon-o-document-duplicate')
@@ -166,6 +159,14 @@ class ContribuyentesTable
                                 ]);
                         }),
                 ])
+                    ->visible(function (Persona $record, $livewire) {
+                        $anio = $livewire->anio ?? date('Y');
+                        $anioId = AnioFiscal::where('anio', $anio)->value('id');
+
+                        return \App\Models\DeterminacionPredial::where('persona_id', $record->id)
+                            ->where('anio_fiscal_id', $anioId)
+                            ->exists();
+                    }) // Solo mostrar si ya se calculó el impuesto
                     ->label('Formatos')
                     ->icon('heroicon-m-ellipsis-vertical')
                     ->button(),

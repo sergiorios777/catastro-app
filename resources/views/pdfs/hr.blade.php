@@ -114,8 +114,8 @@
         <thead>
             <tr>
                 <th width="5%">#</th>
-                <th width="10%">Cód. Predio</th>
-                <th width="50%">Ubicación del Predio</th>
+                <th width="10%">Tipo</th>
+                <th width="50%">Cód. Predio / Ubicación del Predio</th>
                 <th width="10%">% Prop.</th>
                 <th width="15%">Autoavalúo (S/.)</th>
             </tr>
@@ -125,35 +125,125 @@
             @foreach($predios as $relacion)
                 <tr>
                     <td class="text-center">{{ $i++ }}</td>
-                    <td>{{ $relacion->predioFisico->codigo_referencia ?? 'S/N' }}</td>
-                    <td>{{ $relacion->predioFisico->direccion }} - {{ $relacion->predioFisico->sector }}</td>
+                    <td>{{ $relacion->predioFisico->tipo_predio ??  '---' }}</td>
+                    <td>{{ $relacion->predioFisico->cuc ?? 'S/N' }} - {{ $relacion->predioFisico->direccion }} - {{ $relacion->predioFisico->sector }}</td>
                     <td class="text-center">{{ $relacion->porcentaje_propiedad }}%</td>
-                    <td class="text-right">S/. 0.00 (Ref)</td>
+                    <td class="text-right">S/. {{ number_format($calculos[$relacion->predioFisico->id]['valor_fiscal'] ?? 0, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
+    {{-- INICIO: NUEVA SECCIÓN DE BENEFICIOS --}}
+    @php
+        $snapshot = is_array($determinacion->snapshot_datos) 
+            ? $determinacion->snapshot_datos 
+            : json_decode(json_encode($determinacion->snapshot_datos), true);
+
+        $auditBeneficios = $snapshot['auditoria_beneficios'] ?? [];
+        $resumen = $snapshot['resumen_economico'] ?? [
+            'total_autoavaluo_bruto' => $determinacion->base_imponible, // Fallback
+            'total_deduccion_base' => 0,
+            'base_imponible_neta' => $determinacion->base_imponible
+        ];
+    @endphp
+
+    {{-- SECCIÓN III: BENEFICIOS TRIBUTARIOS APROBADOS --}}
+    @if(count($auditBeneficios) > 0)
     <div class="box">
-        <div class="box-title">III. DETERMINACIÓN DEL IMPUESTO</div>
+        <div class="box-title">III. DETALLE DE BENEFICIOS Y DEDUCCIONES APLICADAS</div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+            <thead>
+                <tr style="background-color: #f0f0f0;">
+                    <th width="15%">Beneficio / Norma</th>
+                    <th width="20%">Base Legal</th>
+                    <th width="15%">Documento Aprob.</th>
+                    <th width="10%">Vigencia</th>
+                    <th width="15%">Aplicado A</th>
+                    <th width="10%">Tipo</th>
+                    <th width="15%">Monto Afectado (S/.)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($auditBeneficios as $item)
+                <tr>
+                    <td>{{ $item['concepto'] }}</td>
+                    <td>{{ $item['base_legal'] }}</td>
+                    <td class="text-center">{{ $item['documento'] }}</td>
+                    <td class="text-center">{{ $item['fecha_inicio'] }}</td>
+                    <td class="text-center">
+                        {{ $item['origen'] == 'persona' ? 'GLOBAL' : 'Predio: ' . $item['referencia'] }}
+                    </td>
+                    <td class="text-center">{{ $item['tipo'] }}</td>
+                    <td class="text-right">{{ number_format($item['monto_efecto'], 2) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        <div style="font-size: 9px; margin-top: 2px; font-style: italic;">
+            * El "Monto Afectado" representa la deducción sobre la base imponible o el valor no gravado del predio.
+        </div>
+    </div>
+    @endif
+
+    <div class="box">
+        <div class="box-title">IV. LIQUIDACIÓN DEL IMPUESTO PREDIAL</div>
         <table style="width: 50%; float: right; margin-top: 10px;">
             <tr>
                 <td><strong>Total Predios Declarados:</strong></td>
                 <td class="text-center">{{ $determinacion->cantidad_predios }}</td>
             </tr>
+            {{-- 1. Base Imponible Legal (Art. 11) --}}
             <tr>
-                <td><strong>Base Imponible Total (S/.):</strong></td>
-                <td class="text-right">{{ number_format($determinacion->base_imponible, 2) }}</td>
+                <td style="border:none; text-align: right; padding-right: 10px;">
+                    <strong>Base Imponible (Total Autoavalúo):</strong>
+                    <br><span style="font-size: 8px; color: #666;">(Art. 11 TUO Ley Tributación Municipal)</span>
+                </td>
+                <td style="width: 100px; text-align: right; background-color: #f9f9f9; vertical-align: top;">
+                    {{ number_format($resumen['total_autoavaluo_bruto'], 2) }}
+                </td>
             </tr>
+
+            {{-- 2. Deducción (Art. 19) --}}
+            @if($resumen['total_deduccion_base'] > 0)
             <tr>
-                <td><strong>Impuesto Calculado (Anual):</strong></td>
-                <td class="text-right bold" style="font-size: 13px;">S/.
+                <td style="border:none; text-align: right; padding-right: 10px; color: #d9534f;">
+                    (-) Deducción por Beneficio ({{ intval($resumen['total_deduccion_base'] / $determinacion->valor_uit) }} UIT):
+                    <br><span style="font-size: 8px; color: #666;">(Art. 19 TUO - Pensionista / Adulto Mayor)</span>
+                </td>
+                <td style="text-align: right; color: #d9534f; vertical-align: top;">
+                    ( {{ number_format($resumen['total_deduccion_base'], 2) }} )
+                </td>
+            </tr>
+            
+            {{-- 3. Base Afecta (Resultado) --}}
+            <tr>
+                <td style="border:none; text-align: right; padding-right: 10px; font-weight: bold; border-top: 1px dashed #ccc;">
+                    (=) Base Imponible Afecta:
+                </td>
+                <td style="text-align: right; font-weight: bold; border-top: 1px dashed #ccc;">
+                    {{ number_format($resumen['base_imponible_afecta'], 2) }}
+                </td>
+            </tr>
+            @endif
+
+            {{-- Espaciador --}}
+            <tr><td colspan="2" style="border:none; height: 5px;"></td></tr>
+
+            {{-- 4. Impuesto --}}
+            <tr>
+                <td style="border:none; text-align: right; padding-right: 10px;">Impuesto Calculado (Anual):</td>
+                <td style="text-align: right;">
                     {{ number_format($determinacion->impuesto_calculado, 2) }}
                 </td>
             </tr>
+
+            {{-- 5. Monto Mínimo a Pagar --}}
             <tr>
-                <td><strong>Monto Mínimo a Pagar:</strong></td>
-                <td class="text-right">{{ number_format($determinacion->tasa_minima, 2) }}</td>
+                <td style="border:none; text-align: right; padding-right: 10px;">Monto Mínimo a Pagar:</td>
+                <td style="text-align: right;">
+                    {{ number_format($determinacion->tasa_minima, 2) }}
+                </td>
             </tr>
         </table>
         <div style="clear: both;"></div>
