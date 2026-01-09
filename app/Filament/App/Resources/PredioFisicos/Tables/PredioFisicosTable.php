@@ -138,12 +138,12 @@ class PredioFisicosTable
                         ])),
 
                     // 3. ACCIÓN DE IMPRIMIR TICKETS
-                    Action::make('imprimir_pu')
+                    /*Action::make('imprimir_pu')
                         ->label('PU')
                         ->icon('heroicon-o-document')
                         ->color('info') // Azul
-                        ->url(fn(PredioFisico $record) => route('imprimir.pu', $record->id))
-                        ->openUrlInNewTab(),
+                        ->url(fn(PredioFisico $record) => route('imprimir.pu', $record->id)) // Falta año
+                        ->openUrlInNewTab(),*/
                 ]),
             ])
             ->toolbarActions([

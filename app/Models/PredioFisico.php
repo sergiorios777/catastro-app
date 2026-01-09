@@ -140,6 +140,11 @@ class PredioFisico extends Model
             ->withTimestamps();
     }
 
+    public function beneficios()
+    {
+        return $this->hasMany(BeneficioPredio::class, 'predio_fisico_id');
+    }
+
     /**
      * Scope para filtrar solo predios activos (útil para listados generales)
      */

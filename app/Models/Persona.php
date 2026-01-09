@@ -34,4 +34,9 @@ class Persona extends Model
     {
         return $this->hasMany(DeterminacionPredial::class);
     }
+
+    public function beneficios()
+    {
+        return $this->hasMany(BeneficioPersona::class);
+    }
 }

@@ -45,6 +45,7 @@ class PredioavaluosRelationManager extends RelationManager
                     ->label('Zona'),*/
                 // Características para Aranceles
                 TextColumn::make('tipo_calzada')
+                    ->visible(fn() => $this->getTipoPredio() === 'urbano')
                     ->label('Tipo Calzada')
                     ->formatStateUsing(fn(string $state): string => match ($state) {
                         'tierra' => 'Tierra',
@@ -55,12 +56,43 @@ class PredioavaluosRelationManager extends RelationManager
                         default => $state,
                     }),
                 TextColumn::make('ancho_via')
+                    ->visible(fn() => $this->getTipoPredio() === 'urbano')
                     ->label('Ancho Via')
                     ->numeric()
                     ->formatStateUsing(fn(string $state) => match ($state) {
                         'menos_6' => '< 6m',
                         'entre_6_8' => '6m - 8m',
                         'mas_8' => '> 8m',
+                        default => $state,
+                    }),
+                // Predio tipo rústico
+                TextColumn::make('grupo_tierras')
+                    ->visible(fn() => $this->getTipoPredio() === 'rustico')
+                    ->label('Grupo Tierras')
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'A' => 'Tierras Aptas para Cultivo (A)',
+                        'C' => 'Tierras para Cultivo Permanente (C)',
+                        'P' => 'Pastos (P)',
+                        'X' => 'Eriazas (X)',
+                        default => $state,
+                    }),
+                TextColumn::make('distancia')
+                    ->visible(fn() => $this->getTipoPredio() === 'rustico')
+                    ->label('Distancia')
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'hasta_1km' => 'Hasta 1.00 km',
+                        'de_1_2km' => 'Más de 1.00 hasta 2.00 km',
+                        'de_2_3km' => 'Más de 2.00 hasta 3.00 km',
+                        'mas_3km' => 'Más de 3.00 km',
+                        default => $state,
+                    }),
+                TextColumn::make('calidad_agrologica')
+                    ->visible(fn() => $this->getTipoPredio() === 'rustico')
+                    ->label('Calidad Agrologica')
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'alta' => 'Alta',
+                        'media' => 'Media',
+                        'baja' => 'Baja',
                         default => $state,
                     }),
                 IconColumn::make('tiene_agua')
@@ -72,15 +104,7 @@ class PredioavaluosRelationManager extends RelationManager
                 IconColumn::make('tiene_luz')
                     ->label('Luz')
                     ->boolean(),
-                // Predio tipo rústico
-                /*
-                TextColumn::make('grupo_tierras')
-                    ->label('Grupo Tierras'),
-                TextColumn::make('distancia')
-                    ->label('Distancia'),
-                TextColumn::make('calidad_agrologica')
-                    ->label('Calidad Agrologica'),
-                    */
+
                 // Validación
                 TextColumn::make('valid_from')
                     ->label('Valid From')
@@ -293,7 +317,8 @@ class PredioavaluosRelationManager extends RelationManager
                                     // OJO: Según tu schema, distancia puede ser NULL en algunos grupos de tierras.
                                     // Aquí lo dejo required para simplificar, pero podrías condicionarlo.
                                     ->required(),
-                                Select::make('calidad_agrologica')->options(['alta' => 'Alta', 'media' => 'Media', 'baja' => 'Baja'])->required(),
+                                Select::make('calidad_agrologica')
+                                    ->options(['alta' => 'Alta', 'media' => 'Media', 'baja' => 'Baja'])->required(),
                             ]),
                             Section::make('Servicios')->columnSpan(1)->compact()->columns(3)->schema([
                                 Toggle::make('tiene_luz')->label('Luz'),

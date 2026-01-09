@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DeterminacionPredial;
 use App\Models\PredioFisico;
 use App\Services\PdfGeneratorService; // Importar Servicio
+use Carbon\Carbon;
 
 class DeclaracionJuradaController extends Controller
 {
@@ -30,16 +31,14 @@ class DeclaracionJuradaController extends Controller
             ->header('Content-Disposition', "inline; filename=HR-{$determinacion->anioFiscal->anio}.pdf");
     }
 
-    public function imprimirPu($predioId)
+    public function imprimirPu($predioId, $anio = null)
     {
         $predio = PredioFisico::findOrFail($predioId);
-        // Asumimos año actual o lo pasamos por request, aquí uso 2025 como en tu ejemplo
-        $anio = request('anio', 2025);
 
-        $pdfContent = $this->pdfService->generatePuContent($predio, $anio);
+        $pdfContent = $this->pdfService->generatePuContent($predio, $anio ?? Carbon::now()->year);
 
         return response($pdfContent)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', "inline; filename=PU-{$predio->codigo_referencia}.pdf");
+            ->header('Content-Disposition', "inline; filename=PU-{$predio->cuc}-{$anio}.pdf");
     }
 }

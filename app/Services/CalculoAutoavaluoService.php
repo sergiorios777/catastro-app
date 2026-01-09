@@ -132,18 +132,26 @@ class CalculoAutoavaluoService
                 ->where('calidad_agrologica', $this->avaluo->calidad_agrologica)
                 ->value('valor_arancel');
 
+            // convertir área (m²) en has para aplicar el valor unitario de arancel rústico que se entrega en has
+            $area = $area / 10000;
+
             // TEMPORAL: Mensaje de depuración
             $this->logCalculation(
                 "    - Ubigeo: {$this->ubigeo} \n" .
                 "    - Grupo Tierras: {$this->avaluo->grupo_tierras} \n" .
                 "    - Distancia: {$this->avaluo->distancia} \n" .
-                "    - Calidad Agrologica: {$this->avaluo->calidad_agrologica}"
+                "    - Calidad Agrologica: {$this->avaluo->calidad_agrologica} \n" .
+                "    - Área: {$area} has"
             );
             // ---------------------------------
         }
 
         $total = $area * ($valorArancel ?? 0);
-        $this->logCalculation("   [Terreno] Area: $area m2 * Arancel: " . ($valorArancel ?? 0) . " = $total");
+
+        // TEMPORAL: Mensaje de depuración
+        $unidad = $this->predio->tipo_predio === 'urbano' ? 'm2' : 'has';
+        $this->logCalculation("   [Terreno] Area: $area $unidad * Arancel: " . ($valorArancel ?? 0) . " = $total");
+        // ---------------------------------
 
         return $total;
     }

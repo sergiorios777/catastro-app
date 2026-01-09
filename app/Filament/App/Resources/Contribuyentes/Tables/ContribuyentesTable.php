@@ -15,6 +15,14 @@ use App\Services\CalculoImpuestoService;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Filament\Actions\Action;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Actions; // Contenedor de actions dentro del infolist
+use Filament\Actions\Action as InfolistAction; // Action dentro del infolist (unificado)
+use Illuminate\Database\Eloquent\Model;
+use Filament\Actions\ActionGroup;
 
 class ContribuyentesTable
 {
@@ -85,29 +93,82 @@ class ContribuyentesTable
                             Notification::make()->danger()->title('Error')->body($e->getMessage())->send();
                         }
                     }),
-                Action::make('imprimir_hr')
-                    ->label('Imprimir HR')
-                    ->icon('heroicon-o-document-text')
-                    ->color('success') // Verde
-                    ->url(function (Persona $record, $livewire) {
-                        $anio = $livewire->anio ?? date('Y');
-                        $anioId = AnioFiscal::where('anio', $anio)->value('id');
+                ActionGroup::make([
+                    Action::make('imprimir_hr')
+                        ->label('Imprimir HR')
+                        ->icon('heroicon-o-document-text')
+                        ->color('success') // Verde
+                        ->url(function (Persona $record, $livewire) {
+                            $anio = $livewire->anio ?? date('Y');
+                            $anioId = AnioFiscal::where('anio', $anio)->value('id');
 
-                        return route('imprimir.hr', [
-                            'id' => \App\Models\DeterminacionPredial::where('persona_id', $record->id)
+                            return route('imprimir.hr', [
+                                'id' => \App\Models\DeterminacionPredial::where('persona_id', $record->id)
+                                    ->where('anio_fiscal_id', $anioId)
+                                    ->first()?->id
+                            ]);
+                        })
+                        ->openUrlInNewTab() // Abrir PDF en otra pestaña
+                        ->visible(function (Persona $record, $livewire) {
+                            $anio = $livewire->anio ?? date('Y');
+                            $anioId = AnioFiscal::where('anio', $anio)->value('id');
+
+                            return \App\Models\DeterminacionPredial::where('persona_id', $record->id)
                                 ->where('anio_fiscal_id', $anioId)
-                                ->first()?->id
-                        ]);
-                    })
-                    ->openUrlInNewTab() // Abrir PDF en otra pestaña
-                    ->visible(function (Persona $record, $livewire) {
-                        $anio = $livewire->anio ?? date('Y');
-                        $anioId = AnioFiscal::where('anio', $anio)->value('id');
+                                ->exists();
+                        }), // Solo mostrar si ya se calculó el impuesto
+                    Action::make('imprimir_pu')
+                        ->label('Imprimir PU')
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color('info')
+                        ->modalHeading(fn($record) => "Formatos PU: {$record->nombre_completo}")
+                        ->modalDescription('Seleccione el predio que desea imprimir.')
+                        ->modalSubmitAction(false)
+                        ->modalCancelAction(false)
+                        // CAMBIO AQUÍ: El tipo de dato ahora es Schema
+                        ->infolist(function (Schema $schema, $livewire) {
 
-                        return \App\Models\DeterminacionPredial::where('persona_id', $record->id)
-                            ->where('anio_fiscal_id', $anioId)
-                            ->exists();
-                    }), // Solo mostrar si ya se calculó el impuesto
+                            $anioSeleccionado = $livewire->anio ?? date('Y');
+
+                            return $schema // Ahora trabajamos sobre el objeto Schema
+                                ->components([ // En v4, usamos 'components' en lugar de 'schema' dentro del objeto Schema
+                                    RepeatableEntry::make('predioFisicos')
+                                        ->label('')
+                                        ->schema([ // Dentro del componente sí seguimos usando schema
+                                            Grid::make(3)->schema([
+                                                TextEntry::make('cuc')
+                                                    ->label('CUC')
+                                                    ->icon('heroicon-m-hashtag')
+                                                    ->helperText(fn($record) => $record->codigo_referencia ? "Ref: {$record->codigo_referencia}" : null),
+
+                                                TextEntry::make('direccion')
+                                                    ->label('Dirección')
+                                                    ->icon('heroicon-m-map-pin')
+                                                    ->limit(40),
+
+                                                Actions::make([
+                                                    InfolistAction::make('descargar_pdf')
+                                                        ->label('Imprimir')
+                                                        ->icon('heroicon-o-printer')
+                                                        ->color('success')
+                                                        ->button()
+                                                        ->size('xs')
+                                                        ->url(fn($record) => route('imprimir.pu', [
+                                                            'predioId' => $record->id,
+                                                            'anio' => $anioSeleccionado
+                                                        ]))
+                                                        ->openUrlInNewTab(),
+                                                ])->alignEnd(),
+                                            ]),
+                                        ])
+                                        ->grid(1)
+                                        ->contained(true)
+                                ]);
+                        }),
+                ])
+                    ->label('Formatos')
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->button(),
                 //EditAction::make(),
             ])
             ->toolbarActions([
