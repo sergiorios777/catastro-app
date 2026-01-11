@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
         $tenant = Tenant::firstOrCreate(
             ['slug' => 'demo'], // Buscamos por slug
             [
-                'name' => 'Municipalidad Distrital de Demo',
+                'name' => 'Municipalidad Distrital Demostrativa',
                 'status' => 'active',
                 'subscription_active' => true,
             ]
@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'admin@demo.com'], // Buscamos por email
             [
-                'name' => 'Administrador Demo',
+                'name' => 'Administrador Demostrativo',
                 'password' => Hash::make('password'), // La contraseña será "password"
                 'tenant_id' => $tenant->id, // ¡Importante! Lo vinculamos al tenant
                 'is_global_admin' => false,
@@ -50,7 +50,7 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'superadmin@catastro.com'],
             [
-                'name' => 'Super Admin',
+                'name' => 'Super Admin Global',
                 'password' => Hash::make('password'),
                 'tenant_id' => null, // No pertenece a ningún tenant
                 'is_global_admin' => true,

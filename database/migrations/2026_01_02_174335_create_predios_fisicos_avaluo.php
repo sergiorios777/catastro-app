@@ -45,7 +45,7 @@ return new class extends Migration {
             $table->timestamps();
 
             // Índice para búsquedas rápidas de la versión activa
-            $table->index(['predio_id', 'is_active']);
+            $table->index(['predio_fisico_id', 'is_active']);
 
         });
     }
