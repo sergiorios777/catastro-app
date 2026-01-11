@@ -23,7 +23,7 @@ class AnioFiscalResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'anio';
     protected static ?string $navigationLabel = 'Años fiscales';
-    protected static string|UnitEnum|null $navigationGroup = 'Parámetros globales';
+    protected static string|UnitEnum|null $navigationGroup = 'Configuración Global';
 
     public static function form(Schema $schema): Schema
     {

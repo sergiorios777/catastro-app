@@ -22,7 +22,7 @@ class ReglaDescuentoTributoResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'codigo';
-    protected static ?string $navigationLabel = 'Reglas y Beneficios';
+    protected static ?string $navigationLabel = 'Beneficios tributarios';
     protected static ?string $modelLabel = 'Norma Tributaria';
     protected static string|UnitEnum|null $navigationGroup = 'Configuración Global';
 

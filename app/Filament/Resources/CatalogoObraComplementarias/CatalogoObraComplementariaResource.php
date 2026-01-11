@@ -23,7 +23,7 @@ class CatalogoObraComplementariaResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'Catalogo obra';
     protected static ?string $navigationLabel = 'Catalogo de obras complementarias';
-    protected static string|UnitEnum|null $navigationGroup = 'Parámetros globales';
+    protected static string|UnitEnum|null $navigationGroup = 'Valores Oficiales Edificación';
 
     public static function form(Schema $schema): Schema
     {
