@@ -38,11 +38,13 @@ class CalculoImpuestoService
             ->get();
 
         $sumaAutoavaluos = 0;
+        $sumaValorComputable = 0;
+        $sumaTotalDescuentos = 0;
         $conteoPredios = 0;
         $detallePredios = []; // Guardará el resultado matemático por predio
 
         // ---------------------------------------------------------
-        // PASO 1: CÁLCULO INDIVIDUAL Y BENEFICIOS AL PREDIO (Cascada)
+        // PASO 1: CÁLCULO INDIVIDUAL Y BENEFICIOS AL PREDIO
         // ---------------------------------------------------------
         foreach ($relaciones as $relacion) {
             $predio = $relacion->predioFisico;
@@ -55,9 +57,10 @@ class CalculoImpuestoService
             // A. Calcular valor físico (Ladrillo y cemento)
             $servicioPredio = new CalculoAutoavaluoService($predio, $this->anio);
             $totales = $servicioPredio->calcularTotal();
+            $valorTotalPredio = $totales['total_autoavaluo'];
 
             // B. Valor base según porcentaje de propiedad
-            $valorFiscal = $totales['total_autoavaluo'] * ($relacion->porcentaje_propiedad / 100);
+            $valorFiscal = $valorTotalPredio * ($relacion->porcentaje_propiedad / 100);
 
             // C. Lógica de Descuentos al Predio (Inafectaciones / Exoneraciones)
             // ------------------------------------------------------------------
@@ -71,10 +74,11 @@ class CalculoImpuestoService
                 });
 
             // 2. Variables de control
-            $valorComputable = $valorFiscal;
+            $sumaDescuentos = 0;
+            // $valorComputable = $valorFiscal;
             $beneficiosAplicadosLog = []; // Aquí guardamos qué descuentos se aplicaron
 
-            // 3. Aplicación en Cascada (Uno tras otro sobre el saldo)
+            // 3. Aplicación en base original
             foreach ($beneficiosVigentes as $beneficio) {
                 $regla = $beneficio->reglaDescuentoTributo;
 
@@ -82,10 +86,8 @@ class CalculoImpuestoService
                 if (in_array($regla->tipo_beneficio, ['inafectacion', 'exoneracion'])) {
 
                     $porcentaje = $regla->porcentaje_descuento ?? 0;
-                    $descuento = $valorComputable * ($porcentaje / 100);
-
-                    // Restamos del valor computable
-                    $valorComputable = max(0, $valorComputable - $descuento);
+                    $descuento = $valorFiscal * ($porcentaje / 100);
+                    $sumaDescuentos += $descuento;
 
                     // Guardamos evidencia
                     $beneficiosAplicadosLog[] = [
@@ -96,18 +98,24 @@ class CalculoImpuestoService
                         'base_legal' => $regla->base_legal // Guardamos esto para el reporte
                     ];
 
-                    if ($valorComputable <= 0)
-                        break;
+                    /*if ($valorComputable <= 0)
+                        break;*/
                 }
             }
 
-            $sumaAutoavaluos += $valorComputable;
+            // Restamos del valor computable
+            $valorComputable = max(0, $valorFiscal - $sumaDescuentos);
+            $sumaValorComputable += $valorComputable;
+
+            $sumaAutoavaluos += $valorFiscal;
+            $sumaTotalDescuentos += $sumaDescuentos;
             $conteoPredios++;
 
             // D. Guardamos metadata completa del predio para el snapshot
             $detallePredios[$predio->id] = [
                 'cuc_referencia' => $predio->cuc ?? $predio->codigo_referencia ?? 'ID:' . $predio->id, // Para referencia rápida
-                'valor_fisico' => $totales['total_autoavaluo'],
+                'valor_fisico' => $valorTotalPredio,
+                'porcentaje_propiedad' => $relacion->porcentaje_propiedad,
                 'valor_fiscal' => $valorFiscal,
                 'valor_computable' => $valorComputable,
                 'beneficios_log' => $beneficiosAplicadosLog // <--- Array de beneficios aplicados
@@ -118,6 +126,7 @@ class CalculoImpuestoService
         // PASO 2: BENEFICIOS A LA PERSONA (Deducción 50 UIT)
         // ---------------------------------------------------------
 
+        $baseImponibleEnProceso = $sumaValorComputable;
         $baseImponibleLegal = $sumaAutoavaluos; // Art. 11: Suma total de predios (ya neteados de inafectaciones)
 
         // Cargamos beneficios de la persona
@@ -146,7 +155,9 @@ class CalculoImpuestoService
 
         // Calculamos montos
         $montoDeduccion = $totalDeduccionUIT * $this->anioFiscal->valor_uit;
-        $baseAfecta = max(0, $baseImponibleLegal - $montoDeduccion);
+        $baseAfecta = max(0, $baseImponibleEnProceso - $montoDeduccion);
+
+        $sumaTotalDescuentos = $sumaTotalDescuentos + $montoDeduccion;
 
         // ---------------------------------------------------------
         // PASO 3: CÁLCULO DEL IMPUESTO
@@ -233,6 +244,7 @@ class CalculoImpuestoService
             'resumen_economico' => [
                 'total_autoavaluo_bruto' => $baseImponibleLegal,
                 'total_deduccion_base' => $montoDeduccion,
+                'total_descuentos' => $sumaTotalDescuentos,
                 'base_imponible_afecta' => $baseAfecta,
             ],
         ];

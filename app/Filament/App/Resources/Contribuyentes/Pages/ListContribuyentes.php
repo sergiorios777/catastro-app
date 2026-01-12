@@ -12,6 +12,7 @@ use App\Models\DeterminacionPredial;
 use App\Jobs\CalcularImpuestoJob;
 use App\Jobs\GenerarDeclaracionesMasivasJob;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Forms\Components\Select;
@@ -78,17 +79,52 @@ class ListContribuyentes extends ListRecords
                         return;
                     }
 
-                    // 2. Despachar Batch de Jobs
-                    // Nota: CalcularImpuestoJob espera ID y AÑO (int).
-                    $jobs = $idsPendientes->map(fn($id) => new CalcularImpuestoJob($id, (int) $this->anio));
+                    // 2. Preparar variables para el contexto del Batch
+                    // IMPORTANTE: Capturamos datos simples (ID, string) porque el closure del Batch se serializa
+                    $userId = auth()->id();
+                    $anioActual = $this->anio;
+                    $cantidad = $idsPendientes->count();
 
+                    // 3. Crear instancias de Jobs
+                    $jobs = $idsPendientes->map(fn($id) => new CalcularImpuestoJob($id, (int) $anioActual));
+
+                    // 4. Despachar Batch con Callback de Finalización
                     Bus::batch($jobs)
-                        ->name('Emisión Masiva Predial ' . $this->anio)
+                        ->name('Emisión Masiva Predial ' . $anioActual)
+                        ->allowFailures() // Permite que el lote continúe si falla un solo contribuyente
+                        ->finally(function (\Illuminate\Bus\Batch $batch) use ($userId, $anioActual, $cantidad) {
+                        // ESTE BLOQUE SE EJECUTA EN EL WORKER AL TERMINAR TODO
+        
+                        $user = \App\Models\User::find($userId);
+
+                        if ($user) {
+                            // Determinamos si hubo fallos para cambiar el mensaje
+                            $mensaje = $batch->hasFailures()
+                                ? "Proceso finalizado con algunos errores. Se procesaron {$cantidad} registros."
+                                : "Se completó el cálculo de impuestos para {$cantidad} contribuyentes del año {$anioActual}.";
+
+                            $tipo = $batch->hasFailures() ? 'warning' : 'success';
+
+                            Notification::make()
+                                        ->title('Cálculo Masivo Finalizado')
+                                        ->body($mensaje)
+                                ->$tipo()
+                                    ->actions([
+                                        Action::make('ver')
+                                            ->label('Ver Resultados')
+                                            ->button()
+                                            // Usamos url() helper, asegurate que la ruta sea correcta para tu admin
+                                            ->url('/admin/contribuyentes?activeTab=procesados'),
+                                    ])
+                                    ->sendToDatabase($user); // <--- Aquí es donde ocurre la magia
+                        }
+                    })
                         ->dispatch();
 
+                    // Notificación inmediata (Toast) para decir "Ya empezamos"
                     Notification::make()
-                        ->title('Proceso iniciado')
-                        ->body("Procesando {$idsPendientes->count()} contribuyentes para el año {$this->anio}.")
+                        ->title('Proceso iniciado en segundo plano')
+                        ->body("Procesando {$cantidad} contribuyentes. Te avisaremos en la campanita al terminar.")
                         ->success()
                         ->send();
                 }),
