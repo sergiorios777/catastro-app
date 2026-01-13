@@ -106,6 +106,17 @@
                 <td style="border: none;" colspan="3"><strong>Domicilio Fiscal:</strong>
                     {{ $determinacion->persona->direccion }}</td>
             </tr>
+            <tr style="border: none;">
+                <td style="border: none; padding: 0;" colspan="3">
+                    <table style="border: none; margin: 0;">
+                        <tr style="border: none;">
+                            <td style="border: none;"><strong>Departamento:</strong> {{ $determinacion->persona->ubicacion_geografica['departamento'] }}</td>
+                            <td style="border: none;"><strong>Provincia:</strong> {{ $determinacion->persona->ubicacion_geografica['provincia'] }}</td>
+                            <td style="border: none;"><strong>Distrito:</strong> {{ $determinacion->persona->ubicacion_geografica['distrito'] }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
         </table>
     </div>
 
@@ -207,7 +218,8 @@
         <div class="box-title">IV. LIQUIDACIÓN DEL IMPUESTO PREDIAL</div>
         <table style="width: 50%; float: right; margin-top: 10px;">
             <tr>
-                <td><strong>Total Predios Declarados:</strong></td>
+                <td style="border:none; text-align: right; padding-right: 10px;">
+                    <strong>Total Predios Declarados:</strong></td>
                 <td class="text-center">{{ $determinacion->cantidad_predios }}</td>
             </tr>
             {{-- 1. Base Imponible Legal (Art. 11) --}}
@@ -269,12 +281,12 @@
             </tr>
 
             {{-- 5. Monto Mínimo a Pagar --}}
-            <tr>
+            {{-- <tr>
                 <td style="border:none; text-align: right; padding-right: 10px;">Monto Mínimo a Pagar:</td>
                 <td style="text-align: right;">
                     {{ number_format($determinacion->tasa_minima, 2) }}
                 </td>
-            </tr>
+            </tr> --}}
         </table>
         <div style="clear: both;"></div>
     </div>

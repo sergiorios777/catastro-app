@@ -9,6 +9,9 @@ class Persona extends Model
 {
     use BelongsToTenant;
     protected $guarded = [];
+    protected $casts = [
+        'ubicacion_geografica' => 'array',
+    ];
 
     // Accesores útiles para Filament (opcional pero recomendado)
     public function getNombreCompletoAttribute()
