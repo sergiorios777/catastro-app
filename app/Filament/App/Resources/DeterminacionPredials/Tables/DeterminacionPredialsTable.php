@@ -32,9 +32,12 @@ class DeterminacionPredialsTable
                     ->searchable(['nombres', 'apellidos', 'razon_social']),
                 Tables\Columns\TextColumn::make('anioFiscal.anio')
                     ->label('Año'),
+                Tables\Columns\TextColumn::make('base_imponible')
+                    ->money('PEN')
+                    ->label('Base Imponible'),
                 Tables\Columns\TextColumn::make('impuesto_calculado')
                     ->money('PEN')
-                    ->label('Monto'),
+                    ->label('Impuesto Predial'),
                 Tables\Columns\TextColumn::make('estado')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {

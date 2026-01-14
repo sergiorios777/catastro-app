@@ -23,7 +23,7 @@ class ValorUnitarioEdificacionResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'Valor unitario';
     protected static ?string $navigationLabel = 'Valores unitarios de edificaciones';
-    protected static string|UnitEnum|null $navigationGroup = 'Parámetros globales';
+    protected static string|UnitEnum|null $navigationGroup = 'Valores Oficiales Edificación';
 
     public static function form(Schema $schema): Schema
     {

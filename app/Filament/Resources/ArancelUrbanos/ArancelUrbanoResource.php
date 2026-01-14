@@ -9,6 +9,7 @@ use App\Filament\Resources\ArancelUrbanos\Schemas\ArancelUrbanoForm;
 use App\Filament\Resources\ArancelUrbanos\Tables\ArancelUrbanosTable;
 use App\Models\ArancelUrbano;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -21,6 +22,7 @@ class ArancelUrbanoResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'Arancel T. Urbanos';
+    protected static string|UnitEnum|null $navigationGroup = 'Valores Arancelarios';
 
     public static function form(Schema $schema): Schema
     {

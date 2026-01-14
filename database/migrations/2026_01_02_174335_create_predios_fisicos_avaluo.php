@@ -35,6 +35,7 @@ return new class extends Migration {
 
             // JSONB para detalles flexibles (Linderos, etc.)
             $table->jsonb('info_complementaria')->nullable();
+            $table->jsonb('info_avaluo')->nullable();
 
             // Motor de Versionado
             $table->integer('version')->default(1);
@@ -45,7 +46,7 @@ return new class extends Migration {
             $table->timestamps();
 
             // Índice para búsquedas rápidas de la versión activa
-            $table->index(['predio_id', 'is_active']);
+            $table->index(['predio_fisico_id', 'is_active']);
 
         });
     }

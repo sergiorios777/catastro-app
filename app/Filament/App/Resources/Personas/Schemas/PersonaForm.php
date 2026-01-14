@@ -81,7 +81,23 @@ class PersonaForm
                             ->maxLength(20),
                         TextInput::make('direccion')
                             ->columnSpanFull()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->required(),
+                        TextInput::make('departamento')
+                            ->maxLength(80)
+                            ->statePath('ubicacion_geografica.departamento'),
+                        TextInput::make('provincia')
+                            ->maxLength(80)
+                            ->statePath('ubicacion_geografica.provincia'),
+                        TextInput::make('distrito')
+                            ->maxLength(80)
+                            ->statePath('ubicacion_geografica.distrito'),
+                        TextInput::make('cuenca')
+                            ->maxLength(80)
+                            ->statePath('ubicacion_geografica.cuenca'),
+                        TextInput::make('localidad')
+                            ->maxLength(80)
+                            ->statePath('ubicacion_geografica.localidad'),
                     ]),
             ]);
     }

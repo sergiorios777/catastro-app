@@ -9,6 +9,7 @@ use App\Filament\Resources\Depreciacions\Schemas\DepreciacionForm;
 use App\Filament\Resources\Depreciacions\Tables\DepreciacionsTable;
 use App\Models\Depreciacion;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -20,7 +21,10 @@ class DepreciacionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $recordTitleAttribute = 'Tabla de Depreciación';
+    protected static ?string $recordTitleAttribute = 'id';
+    protected static ?string $navigationLabel = 'Tabla de Depreciación';
+    protected static ?string $modelLabel = 'Tabla de Depreciaciones';
+    protected static string|UnitEnum|null $navigationGroup = 'Valores Oficiales Edificación';
 
     public static function form(Schema $schema): Schema
     {

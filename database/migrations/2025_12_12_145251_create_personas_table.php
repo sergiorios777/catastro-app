@@ -25,6 +25,7 @@ return new class extends Migration {
 
             // Datos de contacto
             $table->string('direccion')->nullable();
+            $table->jsonb('ubicacion_geografica')->nullable();
             $table->string('telefono')->nullable();
             $table->string('email')->nullable();
 

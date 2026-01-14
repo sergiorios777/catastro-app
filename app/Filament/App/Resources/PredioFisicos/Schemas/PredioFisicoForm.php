@@ -2,6 +2,8 @@
 
 namespace App\Filament\App\Resources\PredioFisicos\Schemas;
 
+use Filament\Facades\Filament;
+use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Group;
@@ -158,13 +160,42 @@ class PredioFisicoForm
                     Section::make('Ubicación del Predio')
                         ->columns(3)
                         ->schema([
+                            Placeholder::make('departamento')
+                                ->label('Departamento:')
+                                ->content(
+                                    fn() => Filament::getTenant() ? Filament::getTenant()->departamento : 'Departamento'
+                                )
+                                ->badge(),
+                            Placeholder::make('provincia')
+                                ->label('Provincia:')
+                                ->content(
+                                    fn() => Filament::getTenant() ? Filament::getTenant()->provincia : 'Provincia'
+                                )
+                                ->badge(),
+                            Placeholder::make('distrito')
+                                ->label('Distrito:')
+                                ->content(
+                                    fn() => Filament::getTenant() ? Filament::getTenant()->distrito : 'Distrito'
+                                )
+                                ->badge(),
+                            TextInput::make('cuenca')
+                                ->label('Cuenca'),
+                            TextInput::make('localidad')
+                                ->label('Localidad')
+                                ->columnSpan(2)
+                                ->required(),
                             TextInput::make('direccion')->label('Dirección / Vía')->required()->columnSpanFull(),
-                            TextInput::make('distrito')->default('Distrito Local')->required(),
-                            TextInput::make('sector')->label('Sector / Zona')->required(),
-                            FusedGroup::make()->label('Manzana y Lote')->columnSpan(1)->columns(2)->schema([
-                                TextInput::make('manzana')->placeholder('Mza.')->required(),
-                                TextInput::make('lote')->placeholder('Lote')->required(),
-                            ]),
+                            TextInput::make('sector')
+                                ->label('Sector / Zona')
+                                ->required(),
+                            FusedGroup::make()
+                                ->label('Manzana y Lote')
+                                ->columnSpan(1)
+                                ->columns(2)
+                                ->schema([
+                                    TextInput::make('manzana')->placeholder('Mza.')->required(),
+                                    TextInput::make('lote')->placeholder('Lote')->required(),
+                                ]),
                         ]),
 
                     // SECCIÓN 4: Arancel

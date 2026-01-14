@@ -9,6 +9,7 @@ use App\Filament\App\Resources\Personas\Schemas\PersonaForm;
 use App\Filament\App\Resources\Personas\Tables\PersonasTable;
 use App\Models\Persona;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -19,6 +20,7 @@ class PersonaResource extends Resource
     protected static ?string $model = Persona::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|UnitEnum|null $navigationGroup = 'Información Base';
 
     protected static ?string $recordTitleAttribute = 'persona';
     protected static ?string $navigationLabel = 'Personas';
@@ -38,7 +40,7 @@ class PersonaResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\BeneficiosRelationManager::class,
         ];
     }
 

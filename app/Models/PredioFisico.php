@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PredioFisico extends Model
 {
-    use HasFactory, BelongsToTenant, HasHistory;
+    use HasFactory, BelongsToTenant;
 
     // Laravel intenta buscar 'predio_fisicos', definimos la tabla por si acaso
     protected $table = 'predios_fisicos';
@@ -22,16 +22,19 @@ class PredioFisico extends Model
         'codigo_referencia',
         'direccion',
         'distrito',
+        'cuenca',
+        'localidad',
         'sector',
         'manzana',
         'lote',
         'latitud',
         'longitud',
-        'area_terreno',
+        // 'area_terreno',
         'tipo_predio',
         'zona',
         'estado',
         'es_cuc_provisional',
+        /*
         'tipo_calzada',
         'ancho_via',
         'tiene_agua',
@@ -46,18 +49,19 @@ class PredioFisico extends Model
         'is_active',
         'valid_from',
         'valid_to',
+        */
     ];
 
     protected $casts = [
-        'info_complementaria' => 'array',
-        'area_terreno' => 'decimal:4', // Asegura que PHP lo trate como número con decimales
+        // 'info_complementaria' => 'array',
+        // 'area_terreno' => 'decimal:4', // Asegura que PHP lo trate como número con decimales
         'es_cuc_provisional' => 'boolean',
-        'tiene_agua' => 'boolean',
-        'tiene_desague' => 'boolean',
-        'tiene_luz' => 'boolean',
-        'valid_from' => 'datetime',
-        'valid_to' => 'datetime',
-        'is_active' => 'boolean',
+        // 'tiene_agua' => 'boolean',
+        // 'tiene_desague' => 'boolean',
+        // 'tiene_luz' => 'boolean',
+        // 'valid_from' => 'datetime',
+        // 'valid_to' => 'datetime',
+        // 'is_active' => 'boolean',
     ];
 
     protected static function boot()
@@ -82,7 +86,7 @@ class PredioFisico extends Model
                 // Caso 2: Ingresaron un código.
                 // Si tiene 12 dígitos numéricos, asumimos que es Oficial (SUNARP).
                 // Si no, lo marcamos como provisional/interno.
-                if (strlen($predio->cuc) === 12 && ctype_digit($predio->cuc)) {
+                if (strlen($predio->cuc) === 8 && ctype_digit($predio->cuc)) {
                     $predio->es_cuc_provisional = false;
                 } else {
                     // Es un código manual pero no cumple estándar SUNARP
@@ -138,11 +142,26 @@ class PredioFisico extends Model
             ->withTimestamps();
     }
 
+    public function beneficios()
+    {
+        return $this->hasMany(BeneficioPredio::class, 'predio_fisico_id');
+    }
+
     /**
      * Scope para filtrar solo predios activos (útil para listados generales)
      */
     public function scopeActivos($query)
     {
         return $query->where('estado', 'activo');
+    }
+    /**
+     * Scope para filtrar solo prediosFisicoAvaluos activos (útil para listados generales)
+     */
+    public function avaluoActivo()
+    {
+        return $this->predioFisicoAvaluos()
+            ->where('is_active', true)
+            ->latest()
+            ->first();
     }
 }

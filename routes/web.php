@@ -8,7 +8,7 @@ use App\Http\Controllers\CajaController;
 Route::middleware(['auth'])->group(function () {
     Route::get('/imprimir/hr/{id}', [DeclaracionJuradaController::class, 'imprimirHr'])
         ->name('imprimir.hr');
-    Route::get('/imprimir/pu/{id}', [DeclaracionJuradaController::class, 'imprimirPu'])
+    Route::get('/imprimir/pu/{predioId}/{anio?}', [DeclaracionJuradaController::class, 'imprimirPu'])
         ->name('imprimir.pu');
     Route::get('/imprimir/recibo/{pago}', [ReciboController::class, 'imprimir'])
         ->name('imprimir.recibo');

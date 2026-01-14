@@ -9,6 +9,7 @@ use App\Filament\App\Resources\PredioFisicos\Schemas\PredioFisicoForm;
 use App\Filament\App\Resources\PredioFisicos\Tables\PredioFisicosTable;
 use App\Models\PredioFisico;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -19,6 +20,7 @@ class PredioFisicoResource extends Resource
     protected static ?string $model = PredioFisico::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|UnitEnum|null $navigationGroup = 'Información Base';
     protected static ?string $navigationLabel = 'Predios Físicos';
     protected static ?string $modelLabel = 'Predio Físico';
     protected static ?string $pluralModelLabel = 'Predios Físicos';
@@ -39,6 +41,7 @@ class PredioFisicoResource extends Resource
     {
         return [
             RelationManagers\PredioavaluosRelationManager::class,
+            RelationManagers\BeneficiosRelationManager::class,
             RelationManagers\PropietariosRelationManager::class,
             RelationManagers\ConstruccionesRelationManager::class,
             RelationManagers\ObrasComplementariasRelationManager::class,

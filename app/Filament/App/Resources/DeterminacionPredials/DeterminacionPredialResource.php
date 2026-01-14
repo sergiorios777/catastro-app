@@ -9,6 +9,7 @@ use App\Filament\App\Resources\DeterminacionPredials\Schemas\DeterminacionPredia
 use App\Filament\App\Resources\DeterminacionPredials\Tables\DeterminacionPredialsTable;
 use App\Models\DeterminacionPredial;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -19,8 +20,11 @@ class DeterminacionPredialResource extends Resource
     protected static ?string $model = DeterminacionPredial::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|UnitEnum|null $navigationGroup = 'Determinación Predial';
 
     protected static ?string $recordTitleAttribute = 'Deudas';
+    protected static ?string $modelLabel = 'Determinación Predial';
+    protected static ?string $pluralModelLabel = 'Determinación Prediales';
 
     public static function form(Schema $schema): Schema
     {
@@ -43,8 +47,8 @@ class DeterminacionPredialResource extends Resource
     {
         return [
             'index' => ListDeterminacionPredials::route('/'),
-            'create' => CreateDeterminacionPredial::route('/create'),
-            'edit' => EditDeterminacionPredial::route('/{record}/edit'),
+            //'create' => CreateDeterminacionPredial::route('/create'),
+            //'edit' => EditDeterminacionPredial::route('/{record}/edit'),
         ];
     }
 }

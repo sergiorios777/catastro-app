@@ -9,6 +9,7 @@ use App\Filament\Resources\ArancelRusticos\Schemas\ArancelRusticoForm;
 use App\Filament\Resources\ArancelRusticos\Tables\ArancelRusticosTable;
 use App\Models\ArancelRustico;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -21,6 +22,7 @@ class ArancelRusticoResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'Arancel T. Rústicos';
+    protected static string|UnitEnum|null $navigationGroup = 'Valores Arancelarios';
 
     public static function form(Schema $schema): Schema
     {

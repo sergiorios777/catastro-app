@@ -9,6 +9,7 @@ use App\Filament\App\Resources\Cajas\Schemas\CajaForm;
 use App\Filament\App\Resources\Cajas\Tables\CajasTable;
 use App\Models\Caja;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -19,6 +20,7 @@ class CajaResource extends Resource
     protected static ?string $model = Caja::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|UnitEnum|null $navigationGroup = 'Tesorería';
 
     protected static ?string $recordTitleAttribute = 'Caja';
 

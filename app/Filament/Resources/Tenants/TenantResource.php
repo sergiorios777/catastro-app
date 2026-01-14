@@ -22,9 +22,10 @@ class TenantResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'name';
-    protected static ?string $navigationLabel = 'Municipios';
+    protected static ?string $navigationLabel = 'Municipalidades';
+    protected static ?string $modelLabel = 'Municipalidades';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Gestión del Sistema';
+    // protected static string|UnitEnum|null $navigationGroup = 'Gestión de Municipalidades';
 
     public static function form(Schema $schema): Schema
     {
