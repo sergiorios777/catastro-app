@@ -35,6 +35,7 @@ return new class extends Migration {
 
             // JSONB para detalles flexibles (Linderos, etc.)
             $table->jsonb('info_complementaria')->nullable();
+            $table->jsonb('info_avaluo')->nullable();
 
             // Motor de Versionado
             $table->integer('version')->default(1);

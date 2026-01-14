@@ -42,18 +42,18 @@ class ListContribuyentes extends ListRecords
                 ->icon('heroicon-m-calendar')
                 ->color('gray')
                 ->form([
-                    Select::make('anio')
-                        ->label('Año Fiscal')
-                        ->options(AnioFiscal::pluck('anio', 'anio'))
-                        ->default($this->anio)
-                        ->required(),
-                ])
+                        Select::make('anio')
+                            ->label('Año Fiscal')
+                            ->options(AnioFiscal::pluck('anio', 'anio'))
+                            ->default($this->anio)
+                            ->required(),
+                    ])
                 ->action(function (array $data) {
                     $this->redirect(ListContribuyentes::getUrl(['anio' => $data['anio']]));
                 }),
 
             Actions\Action::make('emision_masiva')
-                ->label('Ejecutar Emisión Masiva (' . $this->anio . ')')
+                ->label('Cálculo Masivo de Impuestos (' . $this->anio . ')')
                 ->color('primary')
                 ->requiresConfirmation()
                 ->action(function () {
@@ -84,15 +84,20 @@ class ListContribuyentes extends ListRecords
                     $userId = auth()->id();
                     $anioActual = $this->anio;
                     $cantidad = $idsPendientes->count();
+                    // --- CORRECCIÓN 1: Capturamos el slug AQUÍ, donde sí existe el contexto ---
+                    $tenantSlug = filament()->getTenant()->slug;
+                    // Opcional: Construimos la URL base aquí para evitar lógica compleja dentro del closure
+                    // Nota: Corregí la estructura de la URL para que sea válida (anio=2025)
+                    $urlDestino = "/app/{$tenantSlug}/contribuyentes?anio={$anioActual}&tab=procesados";
 
                     // 3. Crear instancias de Jobs
                     $jobs = $idsPendientes->map(fn($id) => new CalcularImpuestoJob($id, (int) $anioActual));
 
                     // 4. Despachar Batch con Callback de Finalización
                     Bus::batch($jobs)
-                        ->name('Emisión Masiva Predial ' . $anioActual)
+                        ->name('Cálculo Masivo Impuestos ' . $anioActual)
                         ->allowFailures() // Permite que el lote continúe si falla un solo contribuyente
-                        ->finally(function (\Illuminate\Bus\Batch $batch) use ($userId, $anioActual, $cantidad) {
+                        ->finally(function (\Illuminate\Bus\Batch $batch) use ($userId, $anioActual, $cantidad, $urlDestino) {
                         // ESTE BLOQUE SE EJECUTA EN EL WORKER AL TERMINAR TODO
         
                         $user = \App\Models\User::find($userId);
@@ -110,12 +115,12 @@ class ListContribuyentes extends ListRecords
                                         ->body($mensaje)
                                 ->$tipo()
                                     ->actions([
-                                        Action::make('ver')
-                                            ->label('Ver Resultados')
-                                            ->button()
-                                            // Usamos url() helper, asegurate que la ruta sea correcta para tu admin
-                                            ->url('/admin/contribuyentes?activeTab=procesados'),
-                                    ])
+                                            Action::make('ver')
+                                                ->label('Ver Resultados')
+                                                ->button()
+                                                // Usamos url() helper, asegurate que la ruta sea correcta para tu admin
+                                                ->url($urlDestino),
+                                        ])
                                     ->sendToDatabase($user); // <--- Aquí es donde ocurre la magia
                         }
                     })
@@ -131,9 +136,32 @@ class ListContribuyentes extends ListRecords
 
             // NUEVA ACCIÓN: IMPRESIÓN MASIVA
             Actions\Action::make('imprimir_masivo')
-                ->label('Descargar HR/PU Masivo (' . $this->anio . ')')
+                ->label('Generar HR/PU/PR Masivo (' . $this->anio . ')')
                 ->icon('heroicon-o-printer')
                 ->color('success')
+                // --- AGREGAR ESTO ---
+                ->disabled(function () {
+                    // 1. Obtenemos el ID del año fiscal actual
+                    $anioId = AnioFiscal::where('anio', $this->anio)->value('id');
+
+                    // Si no hay año configurado, deshabilitamos
+                    if (!$anioId)
+                        return true;
+
+                    // 2. Verificamos si EXISTE al menos un cálculo (es más rápido que count())
+                    $existeCalculo = DeterminacionPredial::where('anio_fiscal_id', $anioId)
+                        ->where('tenant_id', filament()->getTenant()->id)
+                        ->exists();
+
+                    // Si NO existe cálculo, el botón debe estar disabled (true)
+                    return !$existeCalculo;
+                })
+                // Opcional: Agregar un tooltip para explicar por qué está bloqueado
+                ->tooltip(
+                    fn(Actions\Action $action) =>
+                    $action->isDisabled() ? 'No hay impuestos calculados para este año.' : 'Descargar ZIP'
+                )
+                // --------------------
                 ->requiresConfirmation()
                 ->modalHeading('Generación Masiva de PDFs')
                 ->modalDescription('Este proceso generará un archivo ZIP con todas las declaraciones juradas (HR y PU) de los contribuyentes que YA tienen el impuesto calculado para este año. Puede tardar varios minutos.')

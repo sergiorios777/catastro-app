@@ -26,6 +26,8 @@ return new class extends Migration {
             // 3. Ubicación Física
             $table->string('direccion')->nullable();
             $table->string('distrito')->nullable(); // Ej: Iquitos
+            $table->string('cuenca', 100)->nullable();
+            $table->string('localidad', 150)->nullable();
             $table->string('sector')->nullable();
             $table->string('manzana', 10)->nullable();
             $table->string('lote', 10)->nullable();

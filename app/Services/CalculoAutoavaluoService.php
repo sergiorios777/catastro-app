@@ -25,6 +25,14 @@ class CalculoAutoavaluoService
     // TEMPORAL: $logDebug
     private bool $logDebug = false;
 
+    // --- NUEVO: Propiedad para acumular el JSON ---
+    protected array $metaDatos = [
+        'terreno' => [],
+        'construcciones' => [],
+        'obras_complementarias' => [],
+        'resumen_autoavaluo' => []
+    ];
+
     public function __construct(PredioFisico $predio, int $anio = null)
     {
         $this->predio = $predio;
@@ -57,7 +65,7 @@ class CalculoAutoavaluoService
         $this->factorOficializacion = AnioFiscal::where('id', $this->anioId)->value('factor_oficializacion') ?? 0;
 
         // TEMPORAL: logDebug
-        $this->logDebug = true;
+        // $this->logDebug = true;
     }
 
     public function calcularTotal(): array
@@ -69,7 +77,7 @@ class CalculoAutoavaluoService
         }
 
         // TEMPORAL: Mensaje de depuración
-        $this->logCalculation(">>> INICIO CÁLCULO AUTOAVALÚO [Predio: {$this->predio->id}] Año: $this->anio");
+        // $this->logCalculation(">>> INICIO CÁLCULO AUTOAVALÚO [Predio: {$this->predio->id}] Año: $this->anio");
         // ---------------------------------
 
         $valorTerreno = $this->calcularTerreno();
@@ -78,8 +86,21 @@ class CalculoAutoavaluoService
 
         $total = $valorTerreno + $valorConstruccion + $valorObras;
 
+        // --- NUEVO: Llenar el resumen final ---
+        $this->metaDatos['resumen_autoavaluo'] = [
+            'valor_terreno' => round($valorTerreno, 2),
+            'valor_construcciones' => round($valorConstruccion, 2),
+            'valor_obras_complementarias' => round($valorObras, 2),
+            'valor_fisico_total' => round($total, 2),
+            'anio_calculo' => $this->anio,
+            'fecha_calculo' => now()->toDateTimeString()
+        ];
+
+        // --- NUEVO: Guardar en base de datos ---
+        $this->persistirMetadatos();
+
         // TEMPORAL: Mensaje de depuración
-        $this->logCalculation("<<< FIN CÁLCULO. Total: " . number_format($total, 2) . " (T: " . number_format($valorTerreno, 2) . " + C: " . number_format($valorConstruccion, 2) . " + O: " . number_format($valorObras, 2) . ")");
+        // $this->logCalculation("<<< FIN CÁLCULO. Total: " . number_format($total, 2) . " (T: " . number_format($valorTerreno, 2) . " + C: " . number_format($valorConstruccion, 2) . " + O: " . number_format($valorObras, 2) . ")");
         // ---------------------------------
 
         return [
@@ -97,7 +118,7 @@ class CalculoAutoavaluoService
         $valorArancel = 0;
 
         // TEMPORAL: Mensaje de depuración
-        $this->logCalculation("    Tipo de predio: {$this->predio->tipo_predio}");
+        // $this->logCalculation("    Tipo de predio: {$this->predio->tipo_predio}");
 
         // Usamos los datos del Avaluo, no del PredioFisico (excepto el tipo_predio)
         if ($this->predio->tipo_predio === 'urbano') {
@@ -112,14 +133,14 @@ class CalculoAutoavaluoService
                 ->value('valor_arancel');
 
             // TEMPORAL: Mensaje de depuración
-            $this->logCalculation(
+            /*$this->logCalculation(
                 "    - Ubigeo: {$this->ubigeo} \n" .
                 "    - Tipo Calzada: {$this->avaluo->tipo_calzada} \n" .
                 "    - Ancho Via: {$this->avaluo->ancho_via} \n" .
                 "    - Agua: {$this->avaluo->tiene_agua} \n" .
                 "    - Desague: {$this->avaluo->tiene_desague} \n" .
                 "    - Luz: {$this->avaluo->tiene_luz}"
-            );
+            );*/
             // ---------------------------------
         } else {
             // Lógica Rústica EXACTA
@@ -136,21 +157,30 @@ class CalculoAutoavaluoService
             $area = $area / 10000;
 
             // TEMPORAL: Mensaje de depuración
-            $this->logCalculation(
+            /*$this->logCalculation(
                 "    - Ubigeo: {$this->ubigeo} \n" .
                 "    - Grupo Tierras: {$this->avaluo->grupo_tierras} \n" .
                 "    - Distancia: {$this->avaluo->distancia} \n" .
                 "    - Calidad Agrologica: {$this->avaluo->calidad_agrologica} \n" .
                 "    - Área: {$area} has"
-            );
+            );*/
             // ---------------------------------
         }
 
         $total = $area * ($valorArancel ?? 0);
 
+        // --- NUEVO: Guardar detalle de Terreno ---
+        $this->metaDatos['terreno'] = [
+            'tipo' => $this->predio->tipo_predio,
+            'area_total' => $this->avaluo->area_terreno, // Área original
+            'unidad_medida' => $this->predio->tipo_predio === 'urbano' ? 'm2' : 'm2 (conv. hectáreas)',
+            'valor_arancel' => $valorArancel ?? 0,
+            'valor_terreno' => round($total, 2)
+        ];
+
         // TEMPORAL: Mensaje de depuración
-        $unidad = $this->predio->tipo_predio === 'urbano' ? 'm2' : 'has';
-        $this->logCalculation("   [Terreno] Area: $area $unidad * Arancel: " . ($valorArancel ?? 0) . " = $total");
+        // $unidad = $this->predio->tipo_predio === 'urbano' ? 'm2' : 'has';
+        // $this->logCalculation("   [Terreno] Area: $area $unidad * Arancel: " . ($valorArancel ?? 0) . " = $total");
         // ---------------------------------
 
         return $total;
@@ -226,9 +256,25 @@ class CalculoAutoavaluoService
             // 3. Fórmula: Area * Valor * (1 - Depreciación)
             $valorPiso = $piso->area_construida * $valorUnitarioM2 * $factorDepreciacion;
 
-            $this->logCalculation("   [Construcción] Piso {$piso->nro_piso} (Ver. {$piso->version}): Área {$piso->area_construida} * ValorU $valorUnitarioM2 * FactorDep " . number_format($factorDepreciacion, 2) . " = $valorPiso");
+            // $this->logCalculation("   [Construcción] Piso {$piso->nro_piso} (Ver. {$piso->version}): Área {$piso->area_construida} * ValorU $valorUnitarioM2 * FactorDep " . number_format($factorDepreciacion, 2) . " = $valorPiso");
 
             $totalConstruccion += $valorPiso;
+
+            // --- NUEVO: Guardar detalle de ESTA construcción ---
+            $this->metaDatos['construcciones'][$piso->id] = [
+                'id_construccion' => $piso->id,
+                'piso' => $piso->nro_piso, // Identificador ej: "Piso 1"
+                'valor_unitario_m2' => round($valorUnitarioM2, 2),
+                'antiguedad' => ($this->anio - $piso->anio_construccion),
+                'material' => $piso->material_estructural,
+                'estado' => $piso->estado_conservacion,
+                'porcentaje_depreciacion' => $porcentajeDepr,
+                'valor_unitario_depreciado' => round($valorUnitarioM2 * $factorDepreciacion, 2),
+                'area_construida' => $piso->area_construida,
+                'area_comun' => $piso->area_comun ?? 0, // Asegúrate de tener este campo en BD
+                'area_total' => $piso->area_construida + ($piso->area_comun ?? 0),
+                'valor_construccion' => round($valorPiso, 2)
+            ];
         }
 
         return $totalConstruccion;
@@ -243,6 +289,9 @@ class CalculoAutoavaluoService
             ->where('zona_geografica', $this->zona)
             ->pluck('valor', 'catalogo_obra_complementaria_id');
 
+        // Limpiamos array
+        $this->metaDatos['obras_complementarias'] = [];
+
         // Iteramos sobre la relación (pivot) predio_obras_complementarias
         foreach ($this->predio->obrasComplementarias as $obra) {
             $cantidad = $obra->pivot->cantidad;
@@ -255,16 +304,36 @@ class CalculoAutoavaluoService
             // Para depreciar obras, necesitaríamos una tabla de depreciación específica para instalaciones.
 
             $subtotal = ($cantidad * $valorUnitario);
+
+            // Aplicar factor oficialización (Esto lo hacías al final sobre el total,
+            // pero para el desglose detallado debemos saber si aplicarlo a cada ítem o no.
+            // Matemáticamente a * f + b * f = (a+b) * f. 
+            // Para el reporte detallado aplicaremos el factor en el resumen final o item por item según prefieras.
+            // Aquí guardaremos el valor REAL calculado).
             $total += $subtotal;
 
+            // --- NUEVO: Guardar detalle de Obra ---
+            $this->metaDatos['obras_complementarias'][$obra->id] = [
+                'descripcion' => $obra->descripcion ?? 'Obra ID ' . $obra->id,
+                'unidad_medida' => $obra->unidad_medida ?? 'und', // Asegúrate de tener este campo
+                'cantidad' => $cantidad,
+                'valor_unitario' => $valorUnitario,
+                'valor_obra_complementaria' => round($subtotal, 2) // Valor sin oficialización aun
+            ];
+
             // TEMPORAL: Mensaje de depuración
-            $this->logCalculation("   [Obra] {$obra->descripcion} (ID: {$obra->id}): Cant $cantidad * Unit $valorUnitario = $subtotal");
+            // $this->logCalculation("   [Obra] {$obra->descripcion} (ID: {$obra->id}): Cant $cantidad * Unit $valorUnitario = $subtotal");
             // ---------------------------------
         }
         // Actualiza el valor al factor de oficialización del año fiscal
-        $total = $this->factorOficializacion * $total;
+        $totalOficializado = $this->factorOficializacion * $total;
 
-        return $total;
+        // Ajustamos los metadatos si es necesario reflejar la oficialización
+        if ($this->factorOficializacion != 1) {
+            $this->metaDatos['resumen_autoavaluo']['nota'] = "Se aplicó factor de oficialización: " . $this->factorOficializacion;
+        }
+
+        return $totalOficializado;
     }
 
     /**
@@ -309,6 +378,21 @@ class CalculoAutoavaluoService
         }
 
         return $totalM2;
+    }
+
+    // --- NUEVO: Método para guardar en BD ---
+    protected function persistirMetadatos(): void
+    {
+        if ($this->avaluo) {
+            // Asegúrate que en tu modelo PredioFisicoAvaluo tengas:
+            // protected $casts = ['info_complementaria' => 'array'];
+
+            $this->avaluo->info_avaluo = $this->metaDatos;
+
+            // Usamos saveQuietly() si no quieres disparar eventos de observer (opcional)
+            // O save() normal.
+            $this->avaluo->save();
+        }
     }
 
     protected function retornarCeros(): array

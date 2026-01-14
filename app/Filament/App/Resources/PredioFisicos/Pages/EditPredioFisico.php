@@ -22,7 +22,7 @@ class EditPredioFisico extends EditRecord
     {
         return [
             // BOTÓN MÁGICO DE CÁLCULO 🧮
-            Action::make('calcular_autoavaluo')
+            /*Action::make('calcular_autoavaluo')
                 ->label('Calcular Autoavalúo')
                 ->icon('heroicon-o-calculator')
                 ->color('success') // Verde dinero
@@ -84,7 +84,7 @@ class EditPredioFisico extends EditRecord
                                     ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ',')),
                             ]),
                         ])
-                ]),
+                ]),*/
 
             DeleteAction::make(),
         ];

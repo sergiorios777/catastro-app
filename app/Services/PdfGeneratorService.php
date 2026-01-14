@@ -75,7 +75,7 @@ class PdfGeneratorService
     public function generatePuContent(PredioFisico $predio, int $anio): string
     {
         // Cargar relaciones si no están cargadas
-        $predio->loadMissing(['construcciones', 'obrasComplementarias', 'tenant', 'propietarios']);
+        $predio->loadMissing(['construcciones', 'obrasComplementarias', 'tenant', 'propietarios', 'beneficios']);
 
         $persona = $predio->propietarios
             ->filter(fn($prop) => $prop->pivot->vigente)
@@ -83,6 +83,7 @@ class PdfGeneratorService
 
         $pdf = Pdf::loadView('pdfs.pu', [
             'predio' => $predio,
+            'avaluo' => $predio->avaluoActivo(),
             'persona' => $persona,
             'anio' => $anio,
             'municipio' => $predio->tenant

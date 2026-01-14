@@ -110,9 +110,11 @@
                 <td style="border: none; padding: 0;" colspan="3">
                     <table style="border: none; margin: 0;">
                         <tr style="border: none;">
-                            <td style="border: none;"><strong>Departamento:</strong> {{ $determinacion->persona->ubicacion_geografica['departamento'] }}</td>
-                            <td style="border: none;"><strong>Provincia:</strong> {{ $determinacion->persona->ubicacion_geografica['provincia'] }}</td>
-                            <td style="border: none;"><strong>Distrito:</strong> {{ $determinacion->persona->ubicacion_geografica['distrito'] }}</td>
+                            <td style="border: none;"><strong>Departamento:</strong> {{ $determinacion->persona->ubicacion_geografica['departamento'] ?? "" }}</td>
+                            <td style="border: none;"><strong>Provincia:</strong> {{ $determinacion->persona->ubicacion_geografica['provincia'] ?? "" }}</td>
+                            <td style="border: none;"><strong>Distrito:</strong> {{ $determinacion->persona->ubicacion_geografica['distrito'] ?? "" }}</td>
+                            <td style="border: none;"><strong>Cuenca:</strong> {{ $determinacion->persona->ubicacion_geografica['cuenca'] ?? "" }}</td>
+                            <td style="border: none;"><strong>Localidad:</strong> {{ $determinacion->persona->ubicacion_geografica['localidad'] ?? "" }}</td>
                         </tr>
                     </table>
                 </td>
@@ -177,9 +179,9 @@
     @endphp
 
     {{-- SECCIÓN III: BENEFICIOS TRIBUTARIOS APROBADOS --}}
-    @if(count($auditBeneficios) > 0)
-        <div class="box">
-            <div class="box-title">III. DETALLE DE BENEFICIOS Y DEDUCCIONES APLICADAS</div>
+    <div class="box">
+        <div class="box-title">III. DETALLE DE BENEFICIOS Y DEDUCCIONES APLICADAS</div>
+        @if(count($auditBeneficios) > 0)
             <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
                 <thead>
                     <tr style="background-color: #f0f0f0;">
@@ -211,8 +213,12 @@
             <div style="font-size: 9px; margin-top: 2px; font-style: italic;">
                 * El "Monto Afectado" representa la deducción sobre la base imponible o el valor no gravado del predio.
             </div>
-        </div>
-    @endif
+        @else
+            <div style="font-size: 9px; margin-top: 2px; font-style: italic;">
+                No se han aplicado beneficios tributarios.
+            </div>
+        @endif
+    </div>
 
     <div class="box">
         <div class="box-title">IV. LIQUIDACIÓN DEL IMPUESTO PREDIAL</div>

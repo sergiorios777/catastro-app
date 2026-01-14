@@ -22,6 +22,8 @@ class PredioFisico extends Model
         'codigo_referencia',
         'direccion',
         'distrito',
+        'cuenca',
+        'localidad',
         'sector',
         'manzana',
         'lote',
@@ -84,7 +86,7 @@ class PredioFisico extends Model
                 // Caso 2: Ingresaron un código.
                 // Si tiene 12 dígitos numéricos, asumimos que es Oficial (SUNARP).
                 // Si no, lo marcamos como provisional/interno.
-                if (strlen($predio->cuc) === 12 && ctype_digit($predio->cuc)) {
+                if (strlen($predio->cuc) === 8 && ctype_digit($predio->cuc)) {
                     $predio->es_cuc_provisional = false;
                 } else {
                     // Es un código manual pero no cumple estándar SUNARP
@@ -151,5 +153,15 @@ class PredioFisico extends Model
     public function scopeActivos($query)
     {
         return $query->where('estado', 'activo');
+    }
+    /**
+     * Scope para filtrar solo prediosFisicoAvaluos activos (útil para listados generales)
+     */
+    public function avaluoActivo()
+    {
+        return $this->predioFisicoAvaluos()
+            ->where('is_active', true)
+            ->latest()
+            ->first();
     }
 }

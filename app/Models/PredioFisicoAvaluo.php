@@ -26,6 +26,7 @@ class PredioFisicoAvaluo extends Model
         'distancia',
         'calidad_agrologica',
         'info_complementaria',
+        'info_avaluo',
         'track_id',
         'version',
         'is_active',
@@ -35,6 +36,7 @@ class PredioFisicoAvaluo extends Model
 
     protected $casts = [
         'info_complementaria' => 'array',
+        'info_avaluo' => 'array',
         'area_terreno' => 'decimal:4', // Asegura que PHP lo trate como número con decimales
         'es_cuc_provisional' => 'boolean',
         'tiene_agua' => 'boolean',
