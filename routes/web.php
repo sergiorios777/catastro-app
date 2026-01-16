@@ -10,6 +10,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('imprimir.hr');
     Route::get('/imprimir/pu/{predioId}/{anio?}', [DeclaracionJuradaController::class, 'imprimirPu'])
         ->name('imprimir.pu');
+    Route::get('/imprimir/lp/{id}', [DeclaracionJuradaController::class, 'imprimirLp'])
+        ->name('imprimir.lp');
     Route::get('/imprimir/recibo/{pago}', [ReciboController::class, 'imprimir'])
         ->name('imprimir.recibo');
     Route::get('/imprimir/ticket/{pago}', [ReciboController::class, 'imprimirTicket'])

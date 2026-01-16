@@ -39,7 +39,7 @@ class CalculoImpuestoService
 
         $sumaAutoavaluos = 0;
         $sumaValorComputable = 0;
-        $sumaTotalDescuentos = 0;
+        $sumaDescuentosPredios = 0;
         $conteoPredios = 0;
         $detallePredios = []; // Guardará el resultado matemático por predio
 
@@ -108,7 +108,7 @@ class CalculoImpuestoService
             $sumaValorComputable += $valorComputable;
 
             $sumaAutoavaluos += $valorFiscal;
-            $sumaTotalDescuentos += $sumaDescuentos;
+            $sumaDescuentosPredios += $sumaDescuentos;
             $conteoPredios++;
 
             // D. Guardamos metadata completa del predio para el snapshot
@@ -117,6 +117,7 @@ class CalculoImpuestoService
                 'valor_fisico' => $valorTotalPredio,
                 'porcentaje_propiedad' => $relacion->porcentaje_propiedad,
                 'valor_fiscal' => $valorFiscal,
+                'valor_descuentos' => $sumaDescuentos,
                 'valor_computable' => $valorComputable,
                 'beneficios_log' => $beneficiosAplicadosLog // <--- Array de beneficios aplicados
             ];
@@ -157,24 +158,34 @@ class CalculoImpuestoService
         $montoDeduccion = $totalDeduccionUIT * $this->anioFiscal->valor_uit;
         $baseAfecta = max(0, $baseImponibleEnProceso - $montoDeduccion);
 
-        $sumaTotalDescuentos = $sumaTotalDescuentos + $montoDeduccion;
+        $sumaTotalDescuentos = $sumaDescuentosPredios + $montoDeduccion;
 
         // ---------------------------------------------------------
         // PASO 3: CÁLCULO DEL IMPUESTO
         // ---------------------------------------------------------
 
         $impuestoTotal = 0;
+        $tramosSnapshot = [];
 
         if ($baseAfecta > 0) {
-            $impuestoTotal = $this->calcularImpuestoEscalonado($baseAfecta, (float) $this->anioFiscal->valor_uit);
+            $resultado = $this->calcularDesgloseImpuesto($baseAfecta, (float) $this->anioFiscal->valor_uit);
+            $tramosSnapshot = $resultado['tramos'];
+            $impuestoTotal = $resultado['total_impuesto'];
         }
 
         // Impuesto Mínimo
         $impuestoMinimo = $this->anioFiscal->tasa_minima_predial ?? ($this->anioFiscal->valor_uit * 0.006);
 
-        if ($baseAfecta > 0 && $impuestoTotal < $impuestoMinimo) {
+        // Nota: No sobrescribimos $impuestoCalculado aquí si es menor al mínimo, 
+        // lo manejamos al guardar en BD para no falsear la matemática de los tramos.
+        // Pero para efectos de cobro final, usaremos el mayor.
+        $impuestoFinalCobro = ($baseAfecta > 0 && $impuestoTotal < $impuestoMinimo)
+            ? $impuestoMinimo
+            : $impuestoTotal;
+
+        /*if ($baseAfecta > 0 && $impuestoTotal < $impuestoMinimo) {
             $impuestoTotal = $impuestoMinimo;
-        }
+        }*/
 
         // --- EXONERACIONES AL IMPUESTO FINAL (Si hubiera) ---
         // (Lógica omitida por brevedad, pero iría aquí si se requiriera)
@@ -237,12 +248,12 @@ class CalculoImpuestoService
                 ->toArray(),
 
             'calculos_internos' => $detallePredios,
-
-            // IMPORTANTE: Esta es la clave que lee tu HR Blade
-            'auditoria_beneficios' => $detallesBeneficios,
-
+            'auditoria_beneficios' => $detallesBeneficios,  // IMPORTANTE: Esta es la clave que lee tu HR Blade
+            'tramos' => $tramosSnapshot,    // IMPORTANTE: Esta es la clave que lee tu LP Blade
             'resumen_economico' => [
                 'total_autoavaluo_bruto' => $baseImponibleLegal,
+                'total_descuentos_predios' => $sumaDescuentosPredios,
+                'base_afecta_sin_deducciones' => $baseImponibleLegal - $sumaDescuentosPredios,
                 'total_deduccion_base' => $montoDeduccion,
                 'total_descuentos' => $sumaTotalDescuentos,
                 'base_imponible_afecta' => $baseAfecta,
@@ -260,6 +271,7 @@ class CalculoImpuestoService
                 'base_imponible' => $baseImponibleLegal, // Art. 11
                 'valor_uit' => $this->anioFiscal->valor_uit,
                 'impuesto_calculado' => $impuestoTotal,
+                'impuesto_final_cobro' => $impuestoFinalCobro,
                 'tasa_minima' => $impuestoMinimo,
                 'fecha_emision' => now(),
                 'snapshot_datos' => $datosParaSnapshot,
@@ -267,6 +279,88 @@ class CalculoImpuestoService
         );
     }
 
+    /**
+     * Calcula el impuesto y devuelve tanto el TOTAL como el DETALLE por tramos.
+     * Reemplaza al antiguo calcularImpuestoEscalonado.
+     * * @param float $baseCalculo (Es la Base Afecta)
+     * @param float $uit
+     * @return array ['total_impuesto' => float, 'tramos' => array]
+     */
+    private function calcularDesgloseImpuesto(float $baseCalculo, float $uit): array
+    {
+        // Validación de seguridad
+        if ($baseCalculo <= 0) {
+            return ['total_impuesto' => 0.0, 'tramos' => []];
+        }
+
+        $detalleTramos = [];
+        $impuestoTotal = 0.0;
+        $remanente = $baseCalculo;
+
+        // Configuración de Tramos (Hardcoded o desde DB)
+        $configuracionTramos = [
+            [
+                'limite_uit' => 15,
+                'tasa' => 0.002, // 0.2%
+                'etiqueta' => 'Hasta 15 UIT'
+            ],
+            [
+                'limite_uit' => 60, // Límite ACUMULADO (hasta 60 UIT en total)
+                'tasa' => 0.006, // 0.6%
+                'etiqueta' => 'Más de 15 a 60 UIT'
+            ],
+            [
+                'limite_uit' => INF,
+                'tasa' => 0.010, // 1.0%
+                'etiqueta' => 'Más de 60 UIT'
+            ]
+        ];
+
+        $uitAcumuladasPrevias = 0;
+
+        foreach ($configuracionTramos as $cfg) {
+            if ($remanente <= 0)
+                break;
+
+            // 1. Definir el techo de este tramo en UITs relativas
+            // Tramo 1: 15 - 0 = 15
+            // Tramo 2: 60 - 15 = 45
+            // Tramo 3: INF
+            $anchoTramoUit = $cfg['limite_uit'] - $uitAcumuladasPrevias;
+
+            // 2. Convertir a Soles
+            $topeSoles = ($cfg['limite_uit'] === INF) ? INF : ($anchoTramoUit * $uit);
+
+            // 3. ¿Cuánto dinero cae en este cubo?
+            $montoEnTramo = ($remanente > $topeSoles) ? $topeSoles : $remanente;
+
+            // 4. Calcular impuesto
+            // IMPORTANTE: Redondear aquí para coincidir con la visualización línea a línea
+            $impuestoTramo = round($montoEnTramo * $cfg['tasa'], 2);
+
+            // 5. Guardar detalle
+            $detalleTramos[] = [
+                'etiqueta' => $cfg['etiqueta'],
+                'base_tramo' => round($montoEnTramo, 2), // Base imponible de este pedacito
+                'alicuota' => ($cfg['tasa'] * 100), // Ej. 0.2
+                'impuesto_tramo' => $impuestoTramo
+            ];
+
+            // 6. Actualizar contadores
+            $impuestoTotal += $impuestoTramo;
+            $remanente -= $montoEnTramo;
+
+            // Guardamos el límite actual para usarlo como piso del siguiente
+            $uitAcumuladasPrevias = $cfg['limite_uit'];
+        }
+
+        return [
+            'total_impuesto' => round($impuestoTotal, 2), // La suma de los redondeos parciales
+            'tramos' => $detalleTramos
+        ];
+    }
+
+    /*
     protected function calcularImpuestoEscalonado(float $baseImponible, float $uit): float
     {
         $impuesto = 0;
@@ -276,10 +370,10 @@ class CalculoImpuestoService
         $tramo1 = 15 * $uit;
 
         if ($montoRestante > $tramo1) {
-            $impuesto += ($tramo1 * 0.002);
+            $impuesto += round($tramo1 * 0.002, 2);
             $montoRestante -= $tramo1;
         } else {
-            $impuesto += ($montoRestante * 0.002);
+            $impuesto += round($montoRestante * 0.002, 2);
             return $impuesto;
         }
 
@@ -287,16 +381,17 @@ class CalculoImpuestoService
         $tramo2 = 45 * $uit;
 
         if ($montoRestante > $tramo2) {
-            $impuesto += ($tramo2 * 0.006);
+            $impuesto += round($tramo2 * 0.006, 2);
             $montoRestante -= $tramo2;
         } else {
-            $impuesto += ($montoRestante * 0.006);
+            $impuesto += round($montoRestante * 0.006, 2);
             return $impuesto;
         }
 
         // TRAMO 3: Exceso de 60 UIT (1.0%)
-        $impuesto += ($montoRestante * 0.010);
+        $impuesto += round($montoRestante * 0.010, 2);
 
         return $impuesto;
     }
+    */
 }

@@ -6,6 +6,7 @@ use App\Models\DeterminacionPredial;
 use App\Models\PredioFisico;
 use App\Models\PropietarioPredio;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class PdfGeneratorService
@@ -55,13 +56,31 @@ class PdfGeneratorService
                 ->get();
         }
 
+        // LÓGICA PARA EL LOGO
+        $tenant = $determinacion->tenant;
+        $logoBase64 = null;
+
+        if ($tenant && $tenant->logo) {
+            // Filament guarda la ruta relativa en la BD (ej: 'logos/escudo.png')
+            // Debemos buscarlo en el disco 'public' (storage/app/public)
+            $path = storage_path('app/public/' . $tenant->logo);
+
+            if (file_exists($path)) {
+                $type = pathinfo($path, PATHINFO_EXTENSION);
+                $data = file_get_contents($path);
+                $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+        }
+
         $pdf = Pdf::loadView('pdfs.hr', [
             'determinacion' => $determinacion,
             'predios' => $predios,
             'calculos' => $calculos,
             'anio' => $determinacion->anioFiscal->anio,
             'municipio' => $determinacion->tenant,
-            'user_name' => $userName
+            'municipio_logo' => $logoBase64,
+            'persona' => $determinacion->persona,
+            'user_name' => $userName,
         ]);
 
         $pdf->setPaper('a4', 'portrait');
@@ -90,6 +109,94 @@ class PdfGeneratorService
         ]);
 
         $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->output();
+    }
+
+    /**
+     * Genera el contenido PDF para el formato LP (Liquidación Predial).
+     * * @param DeterminacionPredial $determinacion
+     * @param string $userName
+     * @return string (Binary PDF content)
+     */
+    public function generateLpContent(DeterminacionPredial $determinacion, string $userName): string
+    {
+        // 1. Preparar datos básicos
+        $anio = $determinacion->anioFiscal->anio;
+        $persona = $determinacion->persona;
+
+        // 2. Calcular Cronograma de Pagos (Sección IV del formato)
+        // El impuesto final es el mayor entre el calculado y la tasa mínima
+        $impuestoFinal = max($determinacion->impuesto_calculado, $determinacion->tasa_minima);
+
+        // Dividimos en 4 cuotas
+        $cuotaBase = floor(($impuestoFinal / 4) * 100) / 100; // Redondeo hacia abajo a 2 decimales
+        $resto = round($impuestoFinal - ($cuotaBase * 4), 2); // Lo que sobra por el redondeo
+
+        // Fechas de vencimiento estandar (Ajustar según Ordenanza municipal si cambia)
+        // Usamos el último día de Feb, May, Ago, Nov.
+        $vencimientos = [
+            1 => Carbon::create($anio, 2)->endOfMonth()->format('Y-m-d'),
+            2 => Carbon::create($anio, 5)->endOfMonth()->format('Y-m-d'),
+            3 => Carbon::create($anio, 8)->endOfMonth()->format('Y-m-d'),
+            4 => Carbon::create($anio, 11)->endOfMonth()->format('Y-m-d'),
+        ];
+
+        $cronograma = [];
+        for ($i = 1; $i <= 4; $i++) {
+            // El ajuste de centavos se suele sumar a la última cuota o a la primera.
+            // Aquí lo sumamos a la 4ta cuota para que cuadre exacto.
+            $montoCuota = $cuotaBase + ($i === 4 ? $resto : 0);
+
+            $cronograma[] = [
+                'numero' => $i,
+                'vence' => $vencimientos[$i],
+                'monto' => $montoCuota,
+                // Derecho de emisión: Generalmente se cobra en la 1ra cuota. 
+                // Si tienes ese dato en $determinacion, úsalo aquí. Asumo 0 por ahora.
+                'emision' => ($i === 1) ? 0.00 : 0.00,
+                'total_cuota' => $montoCuota + (($i === 1) ? 0.00 : 0.00)
+            ];
+        }
+
+        // LÓGICA PARA EL LOGO
+        $tenant = $determinacion->tenant;
+        $logoBase64 = null;
+
+        if ($tenant && $tenant->logo) {
+            // Filament guarda la ruta relativa en la BD (ej: 'logos/escudo.png')
+            // Debemos buscarlo en el disco 'public' (storage/app/public)
+            $path = storage_path('app/public/' . $tenant->logo);
+
+            if (file_exists($path)) {
+                $type = pathinfo($path, PATHINFO_EXTENSION);
+                $data = file_get_contents($path);
+                $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+        }
+
+        // Si no hay logo del tenant, podrías poner uno por defecto del sistema aquí
+        // if (!$logoBase64) { ... }
+
+        // 3. Generar el PDF
+        // Asumimos que la vista está en resources/views/pdfs/lp.blade.php
+        $pdf = Pdf::loadView('pdfs.lp', [
+            'determinacion' => $determinacion,
+            'persona' => $persona,
+            'anio' => $anio,
+            'user_name' => $userName,
+            'cronograma' => $cronograma, // Pasamos el array listo
+            'impuesto_anual' => $impuestoFinal,
+            'municipio_nombre' => $tenant->name,
+            'municipio_logo' => $logoBase64
+        ]);
+
+        // 4. Configuración de hoja
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('margin-top', 10);
+        $pdf->setOption('margin-bottom', 10);
+        $pdf->setOption('margin-left', 10);
+        $pdf->setOption('margin-right', 10);
 
         return $pdf->output();
     }

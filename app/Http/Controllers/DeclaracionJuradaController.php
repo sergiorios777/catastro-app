@@ -41,4 +41,19 @@ class DeclaracionJuradaController extends Controller
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', "inline; filename=PU-{$predio->cuc}-{$anio}.pdf");
     }
+
+    public function imprimirLp($determinacionId)
+    {
+        $determinacion = DeterminacionPredial::with(['persona', 'anioFiscal', 'tenant'])
+            ->findOrFail($determinacionId);
+
+        // Usamos el servicio -> output directo al navegador
+        // Pasamos el usuario actual explícitamente
+        $userName = auth()->user()->name ?? 'Sistema';
+        $pdfContent = $this->pdfService->generateLpContent($determinacion, $userName);
+
+        return response($pdfContent)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', "inline; filename=LP-{$determinacion->anioFiscal->anio}.pdf");
+    }
 }

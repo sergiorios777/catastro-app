@@ -65,7 +65,7 @@ class CalculoAutoavaluoService
         $this->factorOficializacion = AnioFiscal::where('id', $this->anioId)->value('factor_oficializacion') ?? 0;
 
         // TEMPORAL: logDebug
-        // $this->logDebug = true;
+        $this->logDebug = false;
     }
 
     public function calcularTotal(): array
@@ -77,7 +77,7 @@ class CalculoAutoavaluoService
         }
 
         // TEMPORAL: Mensaje de depuración
-        // $this->logCalculation(">>> INICIO CÁLCULO AUTOAVALÚO [Predio: {$this->predio->id}] Año: $this->anio");
+        $this->logCalculation(">>> INICIO CÁLCULO AUTOAVALÚO [Predio: {$this->predio->id}] Año: $this->anio");
         // ---------------------------------
 
         $valorTerreno = $this->calcularTerreno();
@@ -100,7 +100,7 @@ class CalculoAutoavaluoService
         $this->persistirMetadatos();
 
         // TEMPORAL: Mensaje de depuración
-        // $this->logCalculation("<<< FIN CÁLCULO. Total: " . number_format($total, 2) . " (T: " . number_format($valorTerreno, 2) . " + C: " . number_format($valorConstruccion, 2) . " + O: " . number_format($valorObras, 2) . ")");
+        $this->logCalculation("<<< FIN CÁLCULO. Total: " . number_format($total, 2) . " (T: " . number_format($valorTerreno, 2) . " + C: " . number_format($valorConstruccion, 2) . " + O: " . number_format($valorObras, 2) . ")");
         // ---------------------------------
 
         return [
@@ -118,7 +118,7 @@ class CalculoAutoavaluoService
         $valorArancel = 0;
 
         // TEMPORAL: Mensaje de depuración
-        // $this->logCalculation("    Tipo de predio: {$this->predio->tipo_predio}");
+        $this->logCalculation("    Tipo de predio: {$this->predio->tipo_predio}");
 
         // Usamos los datos del Avaluo, no del PredioFisico (excepto el tipo_predio)
         if ($this->predio->tipo_predio === 'urbano') {
@@ -167,7 +167,7 @@ class CalculoAutoavaluoService
             // ---------------------------------
         }
 
-        $total = $area * ($valorArancel ?? 0);
+        $total = round($area * ($valorArancel ?? 0), 2);
 
         // --- NUEVO: Guardar detalle de Terreno ---
         $this->metaDatos['terreno'] = [
@@ -179,8 +179,8 @@ class CalculoAutoavaluoService
         ];
 
         // TEMPORAL: Mensaje de depuración
-        // $unidad = $this->predio->tipo_predio === 'urbano' ? 'm2' : 'has';
-        // $this->logCalculation("   [Terreno] Area: $area $unidad * Arancel: " . ($valorArancel ?? 0) . " = $total");
+        $unidad = $this->predio->tipo_predio === 'urbano' ? 'm2' : 'has';
+        $this->logCalculation("   [Terreno] Area: $area $unidad * Arancel: " . ($valorArancel ?? 0) . " = $total");
         // ---------------------------------
 
         return $total;
@@ -254,9 +254,17 @@ class CalculoAutoavaluoService
             $factorDepreciacion = (100 - $porcentajeDepr) / 100;
 
             // 3. Fórmula: Area * Valor * (1 - Depreciación)
-            $valorPiso = $piso->area_construida * $valorUnitarioM2 * $factorDepreciacion;
+            // $valorPiso = $piso->area_construida * $valorUnitarioM2 * $factorDepreciacion;
 
-            // $this->logCalculation("   [Construcción] Piso {$piso->nro_piso} (Ver. {$piso->version}): Área {$piso->area_construida} * ValorU $valorUnitarioM2 * FactorDep " . number_format($factorDepreciacion, 2) . " = $valorPiso");
+            // Paso A: Calcular el Valor Unitario Depreciado y REDONDEARLO a 2 decimales
+            // Esto es lo que se imprime en el HR ("Val. Unit. Deprec.")
+            $valorUnitarioDepreciado = round($valorUnitarioM2 * $factorDepreciacion, 2);
+
+            // Paso B: Multiplicar el Área por el valor YA REDONDEADO
+            // Esto garantiza que Área * Val.Unit.Deprec = Val.Construccion exacto
+            $valorPiso = $piso->area_construida * $valorUnitarioDepreciado;
+
+            $this->logCalculation("   [Construcción] Piso {$piso->nro_piso} (Ver. {$piso->version}): Área {$piso->area_construida} * ValorU $valorUnitarioM2 * FactorDep " . number_format($factorDepreciacion, 2) . " = $valorPiso");
 
             $totalConstruccion += $valorPiso;
 
@@ -269,7 +277,7 @@ class CalculoAutoavaluoService
                 'material' => $piso->material_estructural,
                 'estado' => $piso->estado_conservacion,
                 'porcentaje_depreciacion' => $porcentajeDepr,
-                'valor_unitario_depreciado' => round($valorUnitarioM2 * $factorDepreciacion, 2),
+                'valor_unitario_depreciado' => $valorUnitarioDepreciado,
                 'area_construida' => $piso->area_construida,
                 'area_comun' => $piso->area_comun ?? 0, // Asegúrate de tener este campo en BD
                 'area_total' => $piso->area_construida + ($piso->area_comun ?? 0),
@@ -303,7 +311,9 @@ class CalculoAutoavaluoService
             // Por simplicidad inicial, calculamos valor directo. 
             // Para depreciar obras, necesitaríamos una tabla de depreciación específica para instalaciones.
 
-            $subtotal = ($cantidad * $valorUnitario);
+            $valorUnitarioDepreciado = $valorUnitario * $this->factorOficializacion;
+
+            $subtotal = round($cantidad * $valorUnitarioDepreciado, 2);
 
             // Aplicar factor oficialización (Esto lo hacías al final sobre el total,
             // pero para el desglose detallado debemos saber si aplicarlo a cada ítem o no.
@@ -322,11 +332,12 @@ class CalculoAutoavaluoService
             ];
 
             // TEMPORAL: Mensaje de depuración
-            // $this->logCalculation("   [Obra] {$obra->descripcion} (ID: {$obra->id}): Cant $cantidad * Unit $valorUnitario = $subtotal");
+            $this->logCalculation("   [Obra] {$obra->descripcion} (ID: {$obra->id}): Cant $cantidad * Unit $valorUnitario = $subtotal");
             // ---------------------------------
         }
-        // Actualiza el valor al factor de oficialización del año fiscal
-        $totalOficializado = $this->factorOficializacion * $total;
+        // No actualizamos el valor al factor de oficialización del año fiscal
+        // $totalOficializado = $this->factorOficializacion * $total;
+        $totalOficializado = $total;
 
         // Ajustamos los metadatos si es necesario reflejar la oficialización
         if ($this->factorOficializacion != 1) {
